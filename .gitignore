@@ -1,0 +1,7 @@
+!.gitignore
+
+# ignore all *.o and *.a files
+*.[oa]
+
+# ignore build floder
+build/*
