@@ -10,9 +10,12 @@
 
 #include "TcpServerSocket.h"
 #include "UdpSocket.h"
-#include <thread>
 #include "ScanDriver.h"
 #include "Ipc.h"
+
+#include <mutex>
+#include <condition_variable>
+#include <thread>
 
 //class TcpSocket;
 extern volatile int tcpUdpPortVal;
@@ -32,6 +35,8 @@ public:
     int RegisterConfiguration(READER_CONFIGURATION *pRConfg);
     int UnRegisterConfiguration();
     //int Run();
+	int StarThread();
+    int StopThread();
 	
 private:
 

@@ -7,6 +7,7 @@
 
 #include "Network.h"
 #include "logging.h"
+#include "realtime.h"
 #include <unistd.h> //fork()
 #include <sys/wait.h>
 
@@ -19,6 +20,9 @@ volatile int tcpUdpPortVal = 0;
 IPC *gIpcServerPtr = NULL;
 IpcClient *gIpcClientPtr = NULL;
 static Network *gNetworkPtr = NULL;
+
+static int StartListenerThread(Network *pNet);
+static int StopListenerThread();
 
 Network::Network(int port):TcpServerPort(port),UdpPort(port)
 {
@@ -125,6 +129,22 @@ int Network::UnRegisterConfiguration()
     return 0;
 }
 
+int Network::StarThread()
+{
+	if(!isThreadRunning) {
+		isThreadRunning = true;
+		StartListenerThread(this);
+	}
+}
+
+int Network::StopThread()
+{
+	if(isThreadRunning) {
+		isThreadRunning = false;
+		StopListenerThread();
+	}
+}
+
 int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventManager *event_manager,READER_CONFIGURATION *pRConfg)
 {
 	LOGGING("InitNetworkServer\r\n");
@@ -149,7 +169,8 @@ int StartNetworkServer()
 	if(NULL!=gNetworkPtr) {
 		//gNetworkPtr->RegisterScanDriver(scan_driver,event_manager);
 	    //gNetworkPtr->RegisterConfiguration(pRConfg);
-		gNetworkPtr->Start();	
+		gNetworkPtr->Start();
+		gNetworkPtr->StarThread();
 	}
     //tp = new Network(tcpPort);
     //tp->RegisterScanDriver(scan_driver,event_manager);
@@ -165,6 +186,7 @@ int StopNetworkServer()
 		//gIpcServerPtr->StopThread();
 	
 	if(NULL!=gNetworkPtr) {
+		gNetworkPtr->StopThread();
 		gNetworkPtr->Stop();
 	    //gNetworkPtr->UnRegisterConfiguration(pRConfg);
 		//gNetworkPtr->UnRegisterScanDriver();	
@@ -177,4 +199,43 @@ int StopNetworkServer()
 	gIpcServerPtr->StopThread();
 	delete gIpcServerPtr;*/
     return 0;
+}
+std::mutex mtx;
+std::unique_lock<std::mutex> lck(mtx);
+std::condition_variable cv;
+
+static void NetworkListenerThread(bool &exit_thread,Network *pNet)
+{
+	set_thread_name(__func__);
+	
+	LOGGING("***********Start NetworkListenerThread***************\r\n");
+
+	
+	while (!exit_thread) {
+		if(cv.wait_for(lck,std::chrono::seconds(5)) == std::cv_status::timeout) {
+			LOGGING("time up!\r\n");
+		}
+	}
+	
+	LOGGING("***********End NetworkListenerThread***************\r\n");
+}
+
+static std::thread ipc_thread;
+static bool ipc_exit = false;
+
+static int StartListenerThread(Network *pNet)
+{
+    ipc_exit = false;
+	ipc_thread = std::move(std::thread(NetworkListenerThread,std::ref(ipc_exit),pNet));
+
+	return 0;
+}
+
+static int StopListenerThread()
+{
+    ipc_exit = true;
+	cv.notify_one();
+	ipc_thread.join();
+
+	return 0;
 }
