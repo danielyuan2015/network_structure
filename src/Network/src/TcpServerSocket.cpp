@@ -40,8 +40,9 @@
 #define LF 0X0A
 #define CR 0X0D
 
-#define USE_IPC_CLASS
-#define MAXCONNECTIONS 4
+//#define USE_IPC_CLASS
+#define MAX_DEV_CONNECTIONS 4
+#define MAX_IFC_CONNECTIONS 2
 
 extern IPC *gIpcServerPtr;
 extern IpcClient *gIpcClientPtr;
@@ -66,9 +67,9 @@ TcpServerSocket::TcpServerSocket(int port,TcpServerType type):tcpPort(port),serv
 
 	if(serverType == TCP_SERVER_TYPE_CONCURRENT) {
 		LOGGING("%s init,type:TCP_SERVER_TYPE_CONCURRENT\r\n",__func__);
-		maxConnections = MAXCONNECTIONS;
+		maxConnections = MAX_DEV_CONNECTIONS;
 		numOfConcurrentServer++;
-		pInterfaceSocket = new TcpInterfaceSocket(2,55256);	
+		pInterfaceSocket = new TcpInterfaceSocket(MAX_IFC_CONNECTIONS,55256);	
 	} else {
 		LOGGING("%s init,type:TCP_SERVER_TYPE_NONECONCURRENT\r\n",__func__);
 		maxConnections = 1;
@@ -102,7 +103,7 @@ TcpServerSocket::~TcpServerSocket()
 int TcpServerSocket::Open(void)
 {
 	if(socketFd < 0) {
-		LOGGING("%s\r\n",__func__);
+		//LOGGING("%s\r\n",__func__);
 		/* Get the Socket file descriptor */  
 		if( (socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1 )  {   
 			printf("Failed: Obtain Tcp Socket Despcritor failed,port:[%d]\r\n",tcpPort);
@@ -122,7 +123,7 @@ int TcpServerSocket::Open(void)
 
 void TcpServerSocket::Close()
 {	
-	LOGGING("TcpServerSocket::%s\r\n",__func__);
+	//LOGGING("%s\r\n",__func__);
 
 	if(socketFd > 0) {
 		shutdown(socketFd,SHUT_RDWR);
@@ -388,7 +389,7 @@ int TcpServerSocket::Stop()
 	if(TCP_SERVER_TYPE_CONCURRENT == serverType) {
 		LOGGING("Stop TCP_SERVER_TYPE_CONCURRENT\r\n");
 #ifdef USE_IPC_CLASS
-		char buf[]={0x01,0x02,0x03};
+		char buf[]={0x01,0x02,0x03};//TODO:Change protocol here(close fork process)
 		if (isThreadRunning) {
 			isThreadRunning = false;
 		}
@@ -421,10 +422,15 @@ int TcpServerSocket::CheckConnections()
 
 int TcpServerSocket::CheckFd(int fd)
 {
-	if(pDevFdVec_->Find(fd)) {
+	LOGGING("%s (%d)\r\n",__func__,fd);
+
+	if(0 < pDevFdVec_->Find(fd)) {
 		pDevFdVec_->Delete(fd);
-	}
+	} else
+		return -1;
+
 	pDevFdVec_->DumpAllData();
+	return 1;
 }
 
 int TcpServerSocket::CloseAllConnections()
@@ -432,7 +438,7 @@ int TcpServerSocket::CloseAllConnections()
 	LOGGING("%s\r\n",__func__);
 	int fd = -1;
 	for(int i =0;i<pDevFdVec_->GetTotalCount();i++) {
-		fd = pDevFdVec_->Get(i);
+		fd = pDevFdVec_->GetVal(i);
 		LOGGING("fd:%d\r\n",fd);
 		shutdown(fd,SHUT_RDWR);
 		close(fd);
@@ -657,16 +663,16 @@ void TcpServerSocket::ConcurrentProcess(void)
 							printf("[epoll]:socket terminated from host!\r\n");
 							delete_event(epfd,tmpSockFd,EPOLLIN|EPOLLET);
 							//checking if it's device fd
-							CheckFd(tmpSockFd);
-							//checking if it's interface fd
-							pInterfaceSocket->CheckFd(tmpSockFd);
-							/*if(pInterfaceSocket->CheckFd(tmpSockFd)) {
-								printf("[epoll]:yes!it's interface fd:%d,delete it!\r\n",tmpSockFd);
-								pInterfaceSocket->DelFdVector(tmpSockFd);
-								pInterfaceSocket->DumpFdVector();
-							}*/
-							shutdown(tmpSockFd,SHUT_RDWR);	
-							close(tmpSockFd);
+							if(0 < CheckFd(tmpSockFd)) {
+								printf("[epoll]:I am device fd\r\n");
+								//close and shutdown
+								shutdown(tmpSockFd,SHUT_RDWR);	
+								close(tmpSockFd);						
+							} else if(0 < pInterfaceSocket->CheckFd(tmpSockFd)) {//checking if it's interface fd
+								printf("[epoll]:I am interface fd\r\n");
+								shutdown(tmpSockFd,SHUT_RDWR);
+								pInterfaceSocket->Close(tmpSockFd);
+							}
 		                } else {
 							printf("[epoll]:read %d bytes:[%s]\r\n",num,buff);
 							//notify IPC
@@ -735,7 +741,7 @@ void TcpServerSocket::ConcurrentProcess(void)
 void TcpServerSocket::ConcurrentThread(void)
 {
 	set_thread_name(__func__);
-	LOGGING("Start %s\r\n",__func__);
+	LOGGING("******Start [%s]******\r\n",__func__);
 	
 	int tmpSockFd = -1,ipcFd = -1,ifcFd = -1;
 	int num = -1,nfds = 0;
@@ -774,8 +780,8 @@ void TcpServerSocket::ConcurrentThread(void)
 					perror("[epoll]:Device server Get connection fd failed\r\n");
 					continue;
 				} else {
-					char *str = inet_ntoa(remoteSockAddr.sin_addr);
-					printf("[epoll]:accapt a connection from %s \r\n",str);
+					//char *str = inet_ntoa(remoteSockAddr.sin_addr);
+					//printf("[epoll]:accapt a connection from %s \r\n",str);
 					add_event(epfd,connFd,EPOLLIN|EPOLLET);
 					connFd = -1;	
 				}		
@@ -793,9 +799,9 @@ void TcpServerSocket::ConcurrentThread(void)
 				}
 			} else if(events[i].events&EPOLLIN) { //read
 				tmpSockFd = events[i].data.fd;
-				printf("[epoll]:current sockfd:%d\r\n",tmpSockFd);
-
-				printf("[epoll]:Socket EPOLLIN\r\n");
+				//printf("[epoll]:current sockfd:%d\r\n",tmpSockFd);
+				printf("[epoll]:Socket EPOLLIN,sockfd:%d\r\n",tmpSockFd);
+				
 				if ( (num = read(tmpSockFd, buff, 512)) < 0) {
 					if (errno == ECONNRESET) {
 						close(tmpSockFd);
@@ -806,12 +812,16 @@ void TcpServerSocket::ConcurrentThread(void)
 					printf("[epoll]:socket terminated from host!\r\n");
 					delete_event(epfd,tmpSockFd,EPOLLIN|EPOLLET);
 					//checking if it's device fd
-					//CheckFd(tmpSockFd);
-					//checking if it's interface fd
-					pInterfaceSocket->CheckFd(tmpSockFd);
-					//close and shutdown
-					shutdown(tmpSockFd,SHUT_RDWR);	
-					close(tmpSockFd);
+					if(0 < CheckFd(tmpSockFd)) {
+						printf("[epoll]:I am device fd\r\n");
+						//close and shutdown
+						shutdown(tmpSockFd,SHUT_RDWR);	
+						close(tmpSockFd);						
+					} else if(0 < pInterfaceSocket->CheckFd(tmpSockFd)) {	//checking if it's interface fd
+						printf("[epoll]:I am interface fd\r\n");
+						shutdown(tmpSockFd,SHUT_RDWR);
+						pInterfaceSocket->Close(tmpSockFd);
+					}
 				} else {
 					printf("[epoll]:read %d bytes:[%s]\r\n",num,buff);
 					//notify IPC
@@ -853,7 +863,7 @@ void TcpServerSocket::ConcurrentThread(void)
 		//printf("end child process\r\n");
 		//printf("child exit!\r\n");
 		//_exit(0);	
-		LOGGING("End %s\r\n",__func__);
+		LOGGING("******End [%s]******\r\n",__func__);
 }
 
 void LittleEndien4bytes(unsigned int x, char *ptr) {*ptr++ = x & 0xff; x >>= 8; *ptr++ = x & 0xff; x >>= 8; *ptr++ = x & 0xff; x >>= 8; *ptr++ = x & 0xff;}
@@ -1275,10 +1285,11 @@ int StopSendDecoderData(EventManager *event_manager)
 }
 
 
-#define LOG_TAG2 "TcpInterfaceSocket"
-#define LOGGING2(...) log_print(LOG_LEVEL,LOG_TAG2,__VA_ARGS__)
 //==============interface class================================
 //=======================================================
+#define LOG_TAG2 "TcpInterfaceSocket"
+#define LOG_LEVEL2 LOG_PRINT
+#define LOGGING2(...) log_print(LOG_LEVEL2,LOG_TAG2,__VA_ARGS__)
 TcpInterfaceSocket::TcpInterfaceSocket(int maxConn, int port):
 	tcpPort(port),maxConnections(maxConn)
 {
@@ -1461,7 +1472,7 @@ int TcpInterfaceSocket::SendDataAll(const char* buff,int len)
 	}*/
 	int fd = -1;
 	for(int i =0;i<pIfcFdVec_->GetTotalCount();i++) {
-		fd = pIfcFdVec_->Get(i);
+		fd = pIfcFdVec_->GetVal(i);
 		if((send(fd, buff, len ,0)) == -1) {
 			perror("Failed to sent string\r\n");
 			return -1;
@@ -1479,10 +1490,15 @@ int TcpInterfaceSocket::CheckConnections()
 
 int TcpInterfaceSocket::CheckFd(int fd)
 {
-	if(pIfcFdVec_->Find(fd)) {
+	LOGGING2("%s (%d)\r\n",__func__,fd);
+
+	if(0 < pIfcFdVec_->Find(fd)) {
 		pIfcFdVec_->Delete(fd);
-	}
+	} else
+		return -1;
+
 	pIfcFdVec_->DumpAllData();
+	return 1;
 }
 
 /*
@@ -1544,7 +1560,7 @@ int TcpInterfaceSocket::CloseAllConnections()
 	connFdVec.clear();*/
 	int fd = -1;
 	for(int i =0;i<pIfcFdVec_->GetTotalCount();i++) {
-		fd = pIfcFdVec_->Get(i);
+		fd = pIfcFdVec_->GetVal(i);
 		LOGGING2("fd:%d\r\n",fd);
 		shutdown(fd,SHUT_RDWR);
 		close(fd);
@@ -1552,10 +1568,13 @@ int TcpInterfaceSocket::CloseAllConnections()
 	pIfcFdVec_->ClearAll();
 }
 
-#define LOG_TAG3 "FdManager"
-#define LOGGING3(...) log_print(LOG_LEVEL,LOG_TAG3,__VA_ARGS__)
+
 //-------------------------FdMamager class---------------------------------
 //-------------------------------------------------------------------------
+#define LOG_TAG3 "FdManager"
+#define LOG_LEVEL3 LOG_NONE
+#define LOGGING3(...) log_print(LOG_LEVEL3,LOG_TAG3,__VA_ARGS__)
+
 FdManager::FdManager(int num):maxSize_(num)
 {
 }
@@ -1569,7 +1588,6 @@ int FdManager::Insert(int fd)
 {
 	LOGGING3("%s %d %d\r\n",__func__,fdVec_.size(),maxSize_);
 	if(fdVec_.size() <= maxSize_) {
-		LOGGING3("%s\r\n",__func__);
 		fdVec_.push_back(fd);
 		LOGGING3("size:%d\r\n",fdVec_.size());
 	} else {
@@ -1579,12 +1597,12 @@ int FdManager::Insert(int fd)
 
 int FdManager::Delete(int fd)
 {
-	LOGGING3("%s\r\n",__func__);
+	LOGGING3("%s (%d)\r\n",__func__,fd);
 	
 	std::vector<int>::iterator iter;
 	iter = std::find(fdVec_.begin(),fdVec_.end(),fd);
 	if(fdVec_.end() == iter) {
-		LOGGING2("can not find fd:%d\r\n",fd);
+		LOGGING3("can not find fd:%d\r\n",fd);
 		return -1;
 	} else {
 		fdVec_.erase(iter);
@@ -1594,7 +1612,7 @@ int FdManager::Delete(int fd)
 
 int FdManager::Find(int fd)
 {
-	LOGGING3("%s\r\n",__func__);
+	LOGGING3("%s (%d)\r\n",__func__,fd);
 	
 	std::vector<int>::iterator iter;
 	iter = std::find(fdVec_.begin(),fdVec_.end(),fd);
@@ -1612,7 +1630,7 @@ int FdManager::ClearAll()
 	fdVec_.clear();
 }
 
-int FdManager::Get(int num)
+int FdManager::GetVal(int num)
 {
 	return fdVec_[num];
 }
@@ -1624,12 +1642,12 @@ int FdManager::GetTotalCount()
 
 void FdManager::DumpAllData()
 {
-	LOGGING3("**********%s*********\r\n",__func__);
+	printf("**********%s*********\r\n",__func__);
 
 	std::vector<int>::iterator iter;
 	for(iter = fdVec_.begin(); iter != fdVec_.end(); ++iter) {
 		printf("[fd]:%d\r\n",*iter);	
 	}
 
-	LOGGING3("******end of %s******\r\n",__func__);
+	printf("******End of %s******\r\n",__func__);
 }

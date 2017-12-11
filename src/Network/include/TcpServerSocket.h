@@ -27,6 +27,8 @@
 #define MAX_EVENTS 100
 #define MAX_TCP_CONNECTIONS 50
 
+//#define USE_IPC_CLASS
+
 class TcpInterfaceSocket;
 class FdManager;
 //class DataParser;
@@ -162,7 +164,7 @@ public:
 	int Delete(int fd);
 	int Find(int fd);
 	int ClearAll();
-	int Get(int num);
+	int GetVal(int num);
 	int GetTotalCount();
 	void DumpAllData();
 

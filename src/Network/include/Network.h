@@ -29,17 +29,18 @@ public:
     void SetServerPort(int);
     void Start();
     void Stop();
-    //int poll_process();
+
     int RegisterScanDriver(ScanDriver *scan_driver, EventManager *event_manager);
     int UnRegisterScanDriver();
     int RegisterConfiguration(READER_CONFIGURATION *pRConfg);
     int UnRegisterConfiguration();
-    //int Run();
+	
+
 	int StarThread();
     int StopThread();
 	
 private:
-
+	void NetworkListenerThread();
     //bool isContinusWattingForConnection = false;
     TcpServerSocket *pTcpSocket = NULL;
 	
@@ -50,10 +51,10 @@ private:
     UdpSocket *pUdpSocket = NULL;
     int  TcpServerPort = -1;
 	int  UdpPort = -1;
-    //struct sockaddr_in addrRemote;
     bool isThreadRunning = false;
-    //int remoteSocketFd;
-    //std::thread Thread;
+    std::thread listenerT;
+	std::mutex mtx;
+	std::condition_variable cv;
 
 protected:
 

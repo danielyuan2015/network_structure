@@ -21,12 +21,12 @@ IPC *gIpcServerPtr = NULL;
 IpcClient *gIpcClientPtr = NULL;
 static Network *gNetworkPtr = NULL;
 
-static int StartListenerThread(Network *pNet);
-static int StopListenerThread();
+//static int StartListenerThread(Network *pNet);
+//static int StopListenerThread();
 
 Network::Network(int port):TcpServerPort(port),UdpPort(port)
 {
-    //Concurrent server for recving menu command form PC and other devices
+    //Concurrent server for device and interface connections
     pTcpSocket = new TcpServerSocket(TcpServerPort+30,TcpServerSocket::TCP_SERVER_TYPE_CONCURRENT);
 
 	//For recving and sending configuration data 
@@ -62,26 +62,28 @@ Network::~Network()
 void Network::Start()
 {
 	log_print(LOG_LEVEL,LOG_TAG,"Network Start\r\n");
-	pTcpSocket->Start();
-	pTcpSocketConfig->Start();
+	if(NULL !=  pTcpSocket)
+		pTcpSocket->Start();
+	if(NULL !=  pTcpSocketConfig)
+		pTcpSocketConfig->Start();
+	if(NULL !=  pTcpSocketImage)
+		pTcpSocketImage->Start();
+	if(NULL !=  pTcpDecoderData)
+		pTcpDecoderData->Start();
 }
 
 void Network::Stop()
 {
 	log_print(LOG_LEVEL,LOG_TAG,"Network Stop\r\n");
-    //printf("[%s]:Network Stop\r\n",LOG_TAG);
-	 pTcpSocket->Stop();
-	 pTcpSocketConfig->Stop();
+	if(NULL !=  pTcpSocket)
+		pTcpSocket->Stop();
+	if(NULL !=  pTcpSocketConfig)
+		pTcpSocketConfig->Stop();
+	if(NULL !=  pTcpSocketImage)
+		pTcpSocketImage->Stop();
+	if(NULL !=  pTcpDecoderData)
+		pTcpDecoderData->Stop();
 }
-
-/*int Network::Run()
-{
-	log_print(LOG_LEVEL,LOG_TAG,"Network Run\r\n");
-    pTcpSocket->Start();
-	//pTcpSocketConfig->Start();
-	//pTcpSocketImage->Start();
-    //pTcpDecoderData->Start();
-}*/
 
 int Network::GetServerPort() const
 {
@@ -95,37 +97,49 @@ void Network::SetServerPort(int port)
 
 int Network::RegisterScanDriver(ScanDriver *scan_driver, EventManager *event_manager)
 {
-    pTcpSocket->RegisterScanDriver(scan_driver,event_manager);
-	pTcpSocketConfig->RegisterScanDriver(scan_driver,event_manager);
-    //pTcpSocketImage->RegisterScanDriver(scan_driver,event_manager);
-    //pTcpDecoderData->RegisterScanDriver(scan_driver,event_manager);
+	if(NULL != pTcpSocket)
+		pTcpSocket->RegisterScanDriver(scan_driver,event_manager);
+	if(NULL != pTcpSocketConfig)
+		pTcpSocketConfig->RegisterScanDriver(scan_driver,event_manager);
+	if(NULL != pTcpSocketImage)
+		pTcpSocketImage->RegisterScanDriver(scan_driver,event_manager);
+	if(NULL != pTcpDecoderData)
+		pTcpDecoderData->RegisterScanDriver(scan_driver,event_manager);
     return 0;
 }
 
 int Network::UnRegisterScanDriver()
 {
-    pTcpSocket->UnRegisterScanDriver();
-	pTcpSocketConfig->UnRegisterScanDriver();
-    //pTcpSocketImage->UnRegisterScanDriver();
-    //pTcpDecoderData->UnRegisterScanDriver();
+	if(NULL != pTcpSocket)
+		pTcpSocket->UnRegisterScanDriver();
+	if(NULL != pTcpSocketConfig)
+		pTcpSocketConfig->UnRegisterScanDriver();
+	if(NULL != pTcpSocketImage)
+		pTcpSocketImage->UnRegisterScanDriver();
+	if(NULL != pTcpDecoderData)	
+		pTcpDecoderData->UnRegisterScanDriver();
     return 0;
 }
 
 int Network::RegisterConfiguration(READER_CONFIGURATION *pRConfg)
 {
-    pTcpSocket->RegisterConfiguration(pRConfg);
-    //pTcpSocketImage->RegisterScanDriver(scan_driver,event_manager);
-    pTcpSocketConfig->RegisterConfiguration(pRConfg);
-    //pTcpDecoderData->RegisterConfiguration(pRConfg);
+	if(NULL != pTcpSocket)
+		pTcpSocket->RegisterConfiguration(pRConfg);
+	if(NULL != pTcpSocketConfig)
+		pTcpSocketConfig->RegisterConfiguration(pRConfg);
+	if(NULL != pTcpDecoderData)	
+		pTcpDecoderData->RegisterConfiguration(pRConfg);
     return 0;
 }
 
 int Network::UnRegisterConfiguration()
 {
-    pTcpSocket->UnRegisterConfiguration();
-    //pTcpSocketImage->UnRegisterScanDriver();
-    pTcpSocketConfig->UnRegisterConfiguration();
-    //pTcpDecoderData->UnRegisterConfiguration();
+	if(NULL != pTcpSocket)
+		pTcpSocket->UnRegisterConfiguration();
+	if(NULL != pTcpSocketConfig)
+		pTcpSocketConfig->UnRegisterConfiguration();
+	if(NULL != pTcpDecoderData)	
+		pTcpDecoderData->UnRegisterConfiguration();
     return 0;
 }
 
@@ -133,7 +147,8 @@ int Network::StarThread()
 {
 	if(!isThreadRunning) {
 		isThreadRunning = true;
-		StartListenerThread(this);
+		//listenerT = std::move(std::thread(&Network::NetworkListenerThread.this));
+		listenerT = std::thread(std::bind(&Network::NetworkListenerThread,this));
 	}
 }
 
@@ -141,18 +156,39 @@ int Network::StopThread()
 {
 	if(isThreadRunning) {
 		isThreadRunning = false;
-		StopListenerThread();
+		cv.notify_one();
+		listenerT.join();
 	}
+}
+
+void Network::NetworkListenerThread()
+{
+	set_thread_name(__func__);
+	std::unique_lock<std::mutex> lck(mtx);
+	int count = 0;
+	
+	LOGGING("***********Start NetworkListenerThread***************\r\n");
+
+	while (isThreadRunning) {
+		count++;
+		if(cv.wait_for(lck,std::chrono::seconds(5)) == std::cv_status::timeout) {
+			LOGGING("[%d]time up!\r\n",count);
+		}
+	}
+	
+	LOGGING("***********End NetworkListenerThread***************\r\n");	
 }
 
 int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventManager *event_manager,READER_CONFIGURATION *pRConfg)
 {
 	LOGGING("InitNetworkServer\r\n");
+
+#ifdef USE_IPC_CLASS
 	gIpcServerPtr = new IPC("/tmp/hf800_rfifo",1024);
 	gIpcServerPtr->Starthread();
-	
 	gIpcClientPtr = new IpcClient("/tmp/hf800_rfifo",1024);
-	
+#endif
+
 	gNetworkPtr = new Network(tcpPort);
 	gNetworkPtr->RegisterScanDriver(scan_driver,event_manager);
 	gNetworkPtr->RegisterConfiguration(pRConfg);
@@ -200,6 +236,7 @@ int StopNetworkServer()
 	delete gIpcServerPtr;*/
     return 0;
 }
+#if 0
 std::mutex mtx;
 std::unique_lock<std::mutex> lck(mtx);
 std::condition_variable cv;
@@ -212,8 +249,8 @@ static void NetworkListenerThread(bool &exit_thread,Network *pNet)
 
 	
 	while (!exit_thread) {
-		if(cv.wait_for(lck,std::chrono::seconds(5)) == std::cv_status::timeout) {
-			LOGGING("time up!\r\n");
+		if(cv.wait_for(lck,std::chrono::seconds(1)) == std::cv_status::timeout) {
+			LOGGING("time is up!\r\n");
 		}
 	}
 	
@@ -239,3 +276,4 @@ static int StopListenerThread()
 
 	return 0;
 }
+#endif
