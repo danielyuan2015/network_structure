@@ -1,21 +1,18 @@
 /*
  * cSocket.cpp
  *
- *  Created on: Aug 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 17, 2017
+ *      Author: Daniel Yuan
  */
 #include "socket.h"
 #include <sys/epoll.h>
 
 cSocket::cSocket()
 {
-	// TODO Auto-generated constructor stub
-
 }
 
 cSocket::~cSocket()
 {
-	// TODO Auto-generated destructor stub
 }
 
 

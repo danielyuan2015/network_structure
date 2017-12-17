@@ -1,8 +1,8 @@
 /*
  *Network.cpp
  *
- *  Created on: Aug 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 17, 2017
+ *      Author: Daniel Yuan
  */
 
 #include "Network.h"
@@ -43,6 +43,9 @@ Network::Network(int port):TcpServerPort(port),UdpPort(port)
 
     //isThreadRunning = true;
     //isContinusWattingForConnection = true;
+	pNwCong = new NetworkConfig();
+	pNwCong->GetIpAddr();
+	pNwCong->GetMAC();
 }
 
 Network::~Network()

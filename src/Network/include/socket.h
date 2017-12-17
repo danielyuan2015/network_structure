@@ -1,8 +1,8 @@
 /*
  * cSocket.h
  *
- *  Created on: Aus 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 17, 2017
+ *      Author: Daniel Yuan
  */
 
 #ifndef SRC_SOCKET_H_

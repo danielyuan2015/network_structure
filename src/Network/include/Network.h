@@ -1,14 +1,15 @@
 /*
  * Network.h
  *
- *  Created on: Aus 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 17, 2017
+ *      Author: Daniel Yuan
  */
 
 #ifndef SRC_NETWORK_H_
 #define SRC_NETWORK_H_
 
 #include "TcpServerSocket.h"
+#include "NetworkConfig.h"
 #include "UdpSocket.h"
 #include "ScanDriver.h"
 #include "Ipc.h"
@@ -49,6 +50,8 @@ private:
     TcpServerSocket *pTcpDecoderData = NULL;  //For sending decoder data and Image index to PC host
     
     UdpSocket *pUdpSocket = NULL;
+	NetworkConfig *pNwCong = NULL;
+	
     int  TcpServerPort = -1;
 	int  UdpPort = -1;
     bool isThreadRunning = false;

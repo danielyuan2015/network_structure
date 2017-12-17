@@ -7,6 +7,7 @@ add_library(network
 	#src/UdpSocket.cpp
 	src/TcpServerSocket.cpp
 	src/ScanDriver.cpp
+	src/NetworkConfig.cpp
 	#src/TcpClientSocket.cpp
 	#src/TcpClient.cpp
 	src/Network.cpp)
