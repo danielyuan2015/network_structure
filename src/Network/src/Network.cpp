@@ -43,9 +43,13 @@ Network::Network(int port):TcpServerPort(port),UdpPort(port)
 
     //isThreadRunning = true;
     //isContinusWattingForConnection = true;
-	pNwCong = new NetworkConfig();
-	pNwCong->GetIpAddr();
-	pNwCong->GetMAC();
+	pNwCong = new NetworkConfig("eth0");
+	char tmp[18] = {0};
+	pNwCong->GetIpAddr(tmp);
+	LOGGING("[%s]\r\n",tmp);
+	pNwCong->GetMAC(tmp);
+	LOGGING("[%s]\r\n",tmp);
+	//int i = NetworkConfig::Nw_Server_Master;
 }
 
 Network::~Network()

@@ -13,19 +13,26 @@
 
 #define IP_SIZE     16
 #define MAC_SIZE    18
-static const char *ethName = "eth0";
+//static const char *ethName = "eth0";
 
 class NetworkConfig 
 {
 public:
-	NetworkConfig();
+	NetworkConfig(const char *pName);
 	virtual ~NetworkConfig();
-	int GetIpAddr(const char *eth_name = ethName);
-	int GetMAC(const char *eth_name = ethName);
+	int GetIpAddr(char *ipBuf);
+	int GetMAC(char *macBuf);
 
+	enum NetworkMode{
+		Nw_Server_Master = 0,
+		Nw_Client_Slave,
+	};
 private:
+	char ifcName[10];
 	char ip_[IP_SIZE];
 	char mac_[MAC_SIZE];
+	bool isDHCPEnabled = false;
+	int mode_ = -1;
 
 protected:
 
