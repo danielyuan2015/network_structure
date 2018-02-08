@@ -8,6 +8,7 @@
 #include "Network.h"
 #include "logging.h"
 #include "realtime.h"
+#include "FdManager.h"
 #include <unistd.h> //fork()
 #include <sys/wait.h>
 
@@ -189,7 +190,22 @@ void Network::NetworkListenerThread()
 int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventManager *event_manager,READER_CONFIGURATION *pRConfg)
 {
 	LOGGING("InitNetworkServer\r\n");
-
+	
+	FdManagerSet *ptest = new FdManagerSet(200);
+	//std::string s1("test1");
+	//std::string s2("test2");
+	ptest->CreatManagerSet("test1",10);
+	ptest->CreatManagerSet("test1",10);
+	ptest->CreatManagerSet("test2",10);
+	
+	ptest->DeleteManagerSet("test1");
+	ptest->insert("test2",1);
+	ptest->insert("test2",2);
+	ptest->insert("test2",3);
+	//ptest->CreatManagerSet("test1");
+	//ptest->DeleteManagerSet("test2");
+	ptest->DumpAll();
+	
 #ifdef USE_IPC_CLASS
 	gIpcServerPtr = new IPC("/tmp/hf800_rfifo",1024);
 	gIpcServerPtr->Starthread();

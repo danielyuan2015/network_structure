@@ -1,8 +1,8 @@
 /*
  * TcpServerSocket.h
  *
- *  Created on: Aug 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 26, 2017
+ *      Author: Daniel Yuan
  */
 
 #ifndef SRC_TCPSERVERSOCKET_H_
@@ -32,8 +32,8 @@
 class TcpInterfaceSocket;
 class FdManager;
 //class DataParser;
-#define TCP_SERVER_EVENT_BASE 0x200
-#define TCP_SERVER_EVENT_BASE 0x200
+#define TCP_SERVER_EVENT_BASE 0x800
+
 typedef enum
 {
 	//TCP_SERVER_START_SENDING_IMAGE = TCP_SERVER_EVENT_BASE + 0x1,
@@ -95,7 +95,7 @@ private:
 	ScanDriver *pScanDriver = NULL;
 	EventManager *pEventManager = NULL;
     //DataParser *pDataParser = NULL;
-    READER_CONFIGURATION *pReaderConfig = NULL;//later i will move it to other class
+    READER_CONFIGURATION *pReaderConfig = NULL;
 	TcpInterfaceSocket *pInterfaceSocket = NULL;
 	FdManager *pDevFdVec_ = NULL;
 	
@@ -155,25 +155,7 @@ private:
 protected:
 };
 
-class FdManager
-{
-public:
-	FdManager(int num);
-	virtual ~FdManager();
-	int Insert(int fd);
-	int Delete(int fd);
-	int Find(int fd);
-	int ClearAll();
-	int GetVal(int num);
-	int GetTotalCount();
-	void DumpAllData();
 
-private:
-	//int totalNum_ = 0;
-	int maxSize_ = 0;
-	std::vector<int> fdVec_;
-protected:
-};
 #endif /* SRC_TCPSERVERSOCKET_H_ */
 
 

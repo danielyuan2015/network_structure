@@ -8,8 +8,10 @@ add_library(network
 	src/TcpServerSocket.cpp
 	src/ScanDriver.cpp
 	src/NetworkConfig.cpp
+	src/FdManager.cpp
 	#src/TcpClientSocket.cpp
 	#src/TcpClient.cpp
+	src/Poller.cpp
 	src/Network.cpp)
 
 target_include_directories(network 

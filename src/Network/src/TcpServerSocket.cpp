@@ -1,8 +1,8 @@
 /*
  *TcpServerSocket.cpp
  *
- *  Created on: Aug 01, 2017
- *      Author: honeywell
+ *  Created on: Dec 26, 2017
+ *      Author: Daniel yuan
  */
  
 #include "TcpServerSocket.h"
@@ -16,12 +16,13 @@
 #include <unistd.h>  
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#include <algorithm>
+//#include <algorithm>
 
 #include "realtime.h"
 #include "bmp.h"
 #include "logging.h"
 #include "test.h"
+#include "FdManager.h"
 //#include "DecoderMenuSettings.h"
 
 #define _DEBUG
@@ -29,18 +30,7 @@
 #define LOG_TAG "TcpServerSocket"
 #define LOG_LEVEL LOG_PRINT //directly print in console
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
-//#define LOGGING(...) printf(__VA_ARGS__)
 
-#define SYN 0X16
-#define DC1 0X11
-#define DC2 0X12
-#define DC3 0X13
-#define DC4 0X14
-#define FE  0XFE
-#define LF 0X0A
-#define CR 0X0D
-
-//#define USE_IPC_CLASS
 #define MAX_DEV_CONNECTIONS 4
 #define MAX_IFC_CONNECTIONS 2
 
@@ -258,6 +248,7 @@ int TcpServerSocket::GetRemoteSocketFd(void)
 	return connFd;
 }
 
+#if 0
 int TcpServerSocket::PollingData()
 {
 	int ret = -1,num = 0;
@@ -324,6 +315,7 @@ int TcpServerSocket::PollingData()
 		return 0;
 
 }
+#endif
 
 int TcpServerSocket::SocketRead(char *buff,int len)
 {
@@ -1153,7 +1145,7 @@ int TcpServerSocket::ProcessAndSendingImageData(char *buf,int len)
 
 	if(NULL == buf)
 		return -1;
-	if((buf[0] == SYN)&&(buf[1] == DC1)) {
+	/*if((buf[0] == SYN)&&(buf[1] == DC1)) {
 		switch(buf[2]) {
 			case 0X01:{
 				//start sending image stram thread
@@ -1189,7 +1181,7 @@ int TcpServerSocket::ProcessAndSendingImageData(char *buf,int len)
 			default:
 				break;
 		}
-	}
+	}*/
 	return 0;
 }
 
@@ -1569,85 +1561,3 @@ int TcpInterfaceSocket::CloseAllConnections()
 }
 
 
-//-------------------------FdMamager class---------------------------------
-//-------------------------------------------------------------------------
-#define LOG_TAG3 "FdManager"
-#define LOG_LEVEL3 LOG_NONE
-#define LOGGING3(...) log_print(LOG_LEVEL3,LOG_TAG3,__VA_ARGS__)
-
-FdManager::FdManager(int num):maxSize_(num)
-{
-}
-
-FdManager::~FdManager()
-{
-	fdVec_.clear();	
-}
-
-int FdManager::Insert(int fd)
-{
-	LOGGING3("%s %d %d\r\n",__func__,fdVec_.size(),maxSize_);
-	if(fdVec_.size() <= maxSize_) {
-		fdVec_.push_back(fd);
-		LOGGING3("size:%d\r\n",fdVec_.size());
-	} else {
-		LOGGING3("Max Size reached!\r\n");
-	}
-}
-
-int FdManager::Delete(int fd)
-{
-	LOGGING3("%s (%d)\r\n",__func__,fd);
-	
-	std::vector<int>::iterator iter;
-	iter = std::find(fdVec_.begin(),fdVec_.end(),fd);
-	if(fdVec_.end() == iter) {
-		LOGGING3("can not find fd:%d\r\n",fd);
-		return -1;
-	} else {
-		fdVec_.erase(iter);
-	}
-	return 0;
-}
-
-int FdManager::Find(int fd)
-{
-	LOGGING3("%s (%d)\r\n",__func__,fd);
-	
-	std::vector<int>::iterator iter;
-	iter = std::find(fdVec_.begin(),fdVec_.end(),fd);
-	if(fdVec_.end() == iter) {
-		LOGGING3("can not find fd:%d\r\n",fd);
-		return -1;
-	} else {
-		return *iter;
-	}
-}
-
-int FdManager::ClearAll()
-{
-	LOGGING3("%s\r\n",__func__);
-	fdVec_.clear();
-}
-
-int FdManager::GetVal(int num)
-{
-	return fdVec_[num];
-}
-
-int FdManager::GetTotalCount()
-{
-	return fdVec_.size();
-}
-
-void FdManager::DumpAllData()
-{
-	printf("**********%s*********\r\n",__func__);
-
-	std::vector<int>::iterator iter;
-	for(iter = fdVec_.begin(); iter != fdVec_.end(); ++iter) {
-		printf("[fd]:%d\r\n",*iter);	
-	}
-
-	printf("******End of %s******\r\n",__func__);
-}
