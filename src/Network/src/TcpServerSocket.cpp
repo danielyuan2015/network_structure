@@ -46,7 +46,7 @@ int StopSendDecoderData(EventManager *event_manager);
 int StartIpcThread(READER_CONFIGURATION *reader_configuration);
 int StopIpcThread(void);
 
-int RawToBmp(BYTE *pIn,BYTE *pOut,int width, int height);
+//int RawToBmp(BYTE *pIn,BYTE *pOut,int width, int height);
 
 TcpServerSocket::TcpServerSocket(int port,TcpServerType type):tcpPort(port),serverType(type)
 {
@@ -93,7 +93,6 @@ TcpServerSocket::~TcpServerSocket()
 int TcpServerSocket::Open(void)
 {
 	if(socketFd < 0) {
-		//LOGGING("%s\r\n",__func__);
 		/* Get the Socket file descriptor */  
 		if( (socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1 )  {   
 			printf("Failed: Obtain Tcp Socket Despcritor failed,port:[%d]\r\n",tcpPort);
@@ -109,12 +108,11 @@ int TcpServerSocket::Open(void)
 		socketAddr.sin_addr.s_addr	= htonl(INADDR_ANY);  // AutoFill local address
 		memset (socketAddr.sin_zero,0,8);				// Flush the rest of struct
 	}
+	return 0;
 }
 
 void TcpServerSocket::Close()
 {	
-	//LOGGING("%s\r\n",__func__);
-
 	if(socketFd > 0) {
 		shutdown(socketFd,SHUT_RDWR);
 		close(socketFd);
@@ -247,75 +245,6 @@ int TcpServerSocket::GetRemoteSocketFd(void)
 {
 	return connFd;
 }
-
-#if 0
-int TcpServerSocket::PollingData()
-{
-	int ret = -1,num = 0;
-		
-	fd_set fdSetRead;
-    //char buf[TCPSOCKETBUFLEN+1];
-	char socket_buf[TCPSOCKETBUFLEN+1];
-	
-	//struct timeval tm;
-	//tm.tv_sec = 0;
-	//tm.tv_usec = 0;
-
-	FD_ZERO(&fdSetRead);
-	FD_SET (connFd, &fdSetRead);
-	ret = select(connFd + 1, &fdSetRead, NULL, NULL, NULL);
-	switch (ret) {
-		case 0:
-			//printf("time out \r\n");
-		break;
-
-		case -1:
-			//perror("select error\r\n");
-			printf("select error\r\n");
-		break; 
-	
-		default:
-			if(FD_ISSET(connFd,&fdSetRead)) {
-				printf("poll:read socket\r\n");
-				//num = recv(socket_fd, socket_buf, 256, 0);
-				num = SocketRead(socket_buf,256);
-				if(num) {
-#ifdef _DEBUG					
-                    printf ("[%d]OK :Receviced numbytes = %d\n",tcpPort,num);
-					socket_buf[num] = '\0';
-					printf ("[%d]OK :Receviced string is: %s\n",tcpPort,socket_buf);	
-#endif
-					switch (serverType) {
-						case TCP_SERVER_TYPE_CONCURRENT:
-							ProcessDataFromHost(socket_buf,num);
-							break;
-						case TCP_SERVER_TYPE_NONE_CONCURRENT:
-							//if(tcpPort == 55266)
-								//pDataParser->ProcessData(socket_buf,num);
-							//else
-								ProcessAndSendingImageData(socket_buf,num);
-							break;
-						default:
-							break;
-					};
-                    memset(socket_buf,0,TCPSOCKETBUFLEN+1);
-					//SocketWrite(socket_buf,num); //test only,send back data
-				} else if(num == 0) { //when num is 0, may receive a FIN form host,need close socket
-					printf("[%d] Terminated from host!\r\n",tcpPort);
-                    memset(socket_buf,0,TCPSOCKETBUFLEN+1);
-					//TODO:need colse or shutdown connection fd here?
-					//close(connFd);
-					//Close();
-					return -1;
-				}
-			}
-		break;
-	}
-	
-		return 0;
-
-}
-#endif
 
 int TcpServerSocket::SocketRead(char *buff,int len)
 {

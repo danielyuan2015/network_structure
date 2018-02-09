@@ -48,17 +48,55 @@ static void epoll_delete_event(int epollfd,int fd,int state)
     epoll_ctl(epollfd,EPOLL_CTL_DEL,fd,&ev);
 }
 
-Poller::Poller()
+Poller::Poller():epollfd_(-1)
 {
+	epollfd_ = epoll_create(MAX_EVENTS);
 
 }
 
 Poller::~Poller()
 {
-	close(epollfd_);
+	if(epollfd_ > 0)
+		close(epollfd_);
 }
 
-int Poller::Poll(int timeoutMs)
+int Poller::Poll(int timeoutMs,ChannelList* activeChannels)
 {
-	
+	int numEvents = epoll_wait(epollfd_,&(*events_.begin()),MAX_EVENTS,timeoutMs);
+	if(numEvents > 0) {
+		fillActiveChannels(numEvents,activeChannels);
+		if (numEvents == events_.size()) {
+			events_.resize(events_.size()*2);
+		}
+	}
 }
+
+void Poller::fillActiveChannels(int numEvents,ChannelList* activeChannels) const
+{
+	//assert(static_cast<size_t>(numEvents) <= events_.size());
+
+	for (int i = 0; i < numEvents; ++i) {
+		Channel* channel = static_cast<Channel*>(events_[i].data.ptr);
+		channel->set_revents(events_[i].events);
+		activeChannels->push_back(channel);
+	}
+}
+
+//operation:EPOLL_CTL_DEL,EPOLL_CTL_DEL,EPOLL_CTL_MOD
+void Poller::update(int operation, Channel* channel)
+{
+	struct epoll_event event;
+	bzero(&event, sizeof event);
+	event.events = channel->events();
+	event.data.ptr = channel;
+	int fd = channel->fd();
+
+	if (epoll_ctl(epollfd_, operation, fd, &event) < 0) {
+		//if (operation == EPOLL_CTL_DEL) {
+			LOGGING("epoll_ctl op=%d,fd=%d\r\n",operation,fd);
+		//} else {
+			//LOGGING("epoll_ctl op=%d,fd=%d\r\n",operation,fd);
+		//}
+	}
+}
+

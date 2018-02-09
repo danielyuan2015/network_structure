@@ -8,24 +8,37 @@
 #define SRC_POLLER_H_
 
 #include "socket.h"
+#include "Channel.h"
 #include <thread>
 #include <map>
 #include <mutex>
 #include <vector>
-//#include "ScanDriver.h"
-//#include "Ipc.h"
 
+#define MAX_EVENTS 100
 
 class Poller:public cNonCopyable
 {
 public:
+	typedef std::vector<struct epoll_event> Eventlist;
+	typedef std::vector<Channel*> ChannelList;
+	typedef std::map<int, Channel*> ChannelMap;
+	typedef enum PollEventType{
+
+	}PollEventType_t;
 	Poller();
 	~Poller();
-	int Poll(int timeoutMs);
+	void update(int,Channel*);
+	int Poll(int,ChannelList*);
+	void fillActiveChannels(int,ChannelList*) const;
 
 private:
-  int epollfd_ = -1;
-	
+	int epollfd_;
+	//int events_;
+	//int revents_;
+	Eventlist events_;
+	ChannelMap channels_;
+	//ChannelList
 protected:
 };
+
 #endif
