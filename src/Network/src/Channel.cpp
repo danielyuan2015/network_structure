@@ -9,6 +9,14 @@
 #include "logging.h"
 #include "Channel.h"
 
+#if 0
+BOOST_STATIC_ASSERT(EPOLLIN == POLLIN);
+BOOST_STATIC_ASSERT(EPOLLPRI == POLLPRI);
+BOOST_STATIC_ASSERT(EPOLLOUT == POLLOUT);
+BOOST_STATIC_ASSERT(EPOLLRDHUP == POLLRDHUP);
+BOOST_STATIC_ASSERT(EPOLLERR == POLLERR);
+BOOST_STATIC_ASSERT(EPOLLHUP == POLLHUP);
+#endif
 //-------------------------FdMamager class---------------------------------
 //-------------------------------------------------------------------------
 #define LOG_TAG "Channel"
@@ -26,26 +34,28 @@ Channel::~Channel()
 
 void Channel::handleEvent()
 {
-	/*if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
+	LOGGING("handle_event(),revents_:%d\r\n",revents_);
+
+	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
 		if (logHup_) {
 			LOGGING("Channel::handle_event() POLLHUP\r\n");
 		}
 		if (closeCallback_) closeCallback_();
 	}
 
-	if (revents_ & POLLNVAL) {
+	/*if (revents_ & POLLNVAL) {
 		LOGGING("Channel::handle_event() POLLNVAL\r\n");
-	}
+	}*/
 
-	if (revents_ & (POLLERR | POLLNVAL)) {
+	if (revents_ & (EPOLLERR/* | POLLNVAL*/)) {
 		if (errorCallback_) errorCallback_();
 	}
-	if (revents_ & (POLLIN | POLLPRI | POLLRDHUP)) {
+	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
 		if (readCallback_) readCallback_();
 	}
-	if (revents_ & POLLOUT) {
+	if (revents_ & EPOLLOUT) {
 		if (writeCallback_) writeCallback_();
-	}*/
+	}
 
 }
 
