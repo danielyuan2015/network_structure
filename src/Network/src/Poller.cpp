@@ -60,7 +60,7 @@ Poller::~Poller()
 		close(epollfd_);
 }
 
-int Poller::Poll(int timeoutMs,ChannelList* activeChannels)
+int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 {
 	int numEvents = epoll_wait(epollfd_,&(*events_.begin()),MAX_EVENTS,timeoutMs);
 	if(numEvents > 0) {
@@ -97,6 +97,64 @@ void Poller::update(int operation, Channel* channel)
 		//} else {
 			//LOGGING("epoll_ctl op=%d,fd=%d\r\n",operation,fd);
 		//}
+	}
+}
+
+void Poller::updateChannel(Channel* channel)
+{
+	Poller::assertInLoopThread();
+	const int index = channel->index();
+	if (index == cNew||index == cDeleted) {
+	// a new one, add with EPOLL_CTL_ADD
+		int fd =channel->fd();
+		if(index == cNew) {
+			if(channels_.find(fd) == channels_.end()) { //not find
+				channels_[fd] = channel;	
+			}		
+		} else {// index == cDeleted
+			if(channels_.find(fd) != channels_.end()) {//find
+				if(channels_[fd] == channel) {
+					return;
+				}
+			}
+		}
+	    channel->set_index(cAdded);
+	    update(EPOLL_CTL_ADD, channel);
+	} else {
+	// update existing one with EPOLL_CTL_MOD/DEL
+	    int fd = channel->fd();
+		if(channels_.find(fd) != channels_.end()) { //find
+			if(channels_[fd] == channel) {
+				if(index == cAdded) {
+					if (channel->isNoneEvent()) {
+						update(EPOLL_CTL_DEL,channel);
+						channel->set_index(cDeleted);
+					} else {
+						update(EPOLL_CTL_MOD,channel);
+					}
+				}
+			}
+		}
+	}
+}
+
+void Poller::removeChannel(Channel* channel)
+{
+	Poller::assertInLoopThread();
+	int fd = channel->fd();
+	if(channels_.find(fd) != channels_.end()) { //find
+		if(channels_[fd] == channel) {
+			if(channel->isNoneEvent()) {
+  				int index = channel->index();
+				if(index == cAdded||index == cDeleted) {
+					channels_.erase(fd);
+					if (index == cAdded) {
+						update(EPOLL_CTL_DEL, channel);
+					}
+					channel->set_index(cNew);
+				}
+			}	
+		}
 	}
 }
 

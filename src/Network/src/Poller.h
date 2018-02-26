@@ -22,14 +22,29 @@ public:
 	typedef std::vector<struct epoll_event> Eventlist;
 	typedef std::vector<Channel*> ChannelList;
 	typedef std::map<int, Channel*> ChannelMap;
-	typedef enum PollEventType{
+	/*typedef enum PollEventType{
 
-	}PollEventType_t;
+	}PollEventType_t;*/
+	typedef enum ChannelIndex {
+		cNew = 0,
+		cAdded,
+		cDeleted
+	}ChannelIndex_t;
+
 	Poller();
 	~Poller();
+	
+	void updateChannel(Channel*);
+	void removeChannel(Channel*);
 	void update(int,Channel*);
-	int Poll(int,ChannelList*);
+	
+	int poll(int,ChannelList*);
 	void fillActiveChannels(int,ChannelList*) const;
+	
+	void assertInLoopThread()
+	{
+	  //ownerLoop_->assertInLoopThread();
+	}
 
 private:
 	int epollfd_;
@@ -37,6 +52,7 @@ private:
 	//int revents_;
 	Eventlist events_;
 	ChannelMap channels_;
+	//EventLoop* ownerLoop_;
 	//ChannelList
 protected:
 };

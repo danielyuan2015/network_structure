@@ -23,6 +23,10 @@ BOOST_STATIC_ASSERT(EPOLLHUP == POLLHUP);
 #define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
 
+const int Channel::kNoneEvent = 0;
+const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
+const int Channel::kWriteEvent = EPOLLOUT;
+
 Channel::Channel(int fd__)
 :fd_(fd__),events_(0),revents_(0)
 {
@@ -30,6 +34,11 @@ Channel::Channel(int fd__)
 
 Channel::~Channel()
 {
+}
+
+void Channel::update()
+{
+  //loop_->updateChannel(this);
 }
 
 void Channel::handleEvent()

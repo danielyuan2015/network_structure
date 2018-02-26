@@ -10,6 +10,7 @@
 #include <vector>
 #include "socket.h"
 #include "Channel.h"
+#include "Poller.h"
 
 ///
 /// Reactor, at most one per thread.
@@ -33,6 +34,8 @@ public:
 private:
 	bool quit_;
 	ChannelList activeChannels_;
+	Channel* currentActiveChannel_;
+	Poller *poller_;
 protected:
 };
 

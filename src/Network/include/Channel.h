@@ -20,6 +20,11 @@ public:
 
 	int events() const { return events_; }
 	void set_revents(int revt) { revents_ = revt; } // used by pollers
+	bool isNoneEvent() const { return events_ == kNoneEvent; }
+
+	// for Poller
+	int index() { return index_; }
+	void set_index(int idx) { index_ = idx; }
 	
 	void setReadCallback(const EventCallback& cb)
 	{ readCallback_ = cb; }
@@ -33,6 +38,7 @@ public:
 	int fd() const { return fd_; }
 
 private:
+	void update();
 	static const int kNoneEvent;
 	static const int kReadEvent;
 	static const int kWriteEvent;
