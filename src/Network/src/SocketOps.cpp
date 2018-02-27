@@ -22,10 +22,15 @@
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
 
 //using namespace sockets;
-static struct sockaddr* sockaddr_cast(struct sockaddr_in *addr)
+struct sockaddr* sockets::sockaddr_cast(struct sockaddr_in *addr)
 {
 	//return static_cast<struct sockaddr*>(addr);
 	return (struct sockaddr*)(addr);
+}
+
+const struct sockaddr* sockets::sockaddr_cast(const struct sockaddr_in *addr)
+{
+	return (const struct sockaddr*)(addr);
 }
 
 /*const struct sockaddr_in* sockets::sockaddr_in_cast(const struct sockaddr *addr)

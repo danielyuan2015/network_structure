@@ -9,7 +9,10 @@
 #define SRC_SOCKET_H_
 #include <sys/epoll.h>
 #include <sys/socket.h>
-#include<netinet/in.h>   // sockaddr_in
+#include <netinet/in.h>   // sockaddr_in
+#include "InetAddress.h"
+
+class InetAddress;
 
 class cSocket 
 {
@@ -46,6 +49,10 @@ public:
 	 ~Socket();
 	 
 	void Listen();
+	void Bind(const InetAddress& localaddr);
+	int Accept(InetAddress* peeraddr);
+	void ShutdownReadWrite();
+	void ShutdownWrite();
 
 	/*void Bind();
 	void Listen();
