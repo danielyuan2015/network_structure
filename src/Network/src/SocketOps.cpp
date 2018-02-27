@@ -33,13 +33,6 @@ const struct sockaddr* sockets::sockaddr_cast(const struct sockaddr_in *addr)
 	return (const struct sockaddr*)(addr);
 }
 
-/*const struct sockaddr_in* sockets::sockaddr_in_cast(const struct sockaddr *addr)
-{
-	//return static_cast<const struct sockaddr_in*>(implicit_cast<const void*>(addr));
-	//return (const struct sockaddr_in*)(addr);
-	return static_cast<const struct sockaddr_in*>((const void*)(addr));
-}*/
-
 void sockets::bindOrDie(int sockfd, const struct sockaddr* addr)
 {
 	int ret = ::bind(sockfd, addr, static_cast<socklen_t>(sizeof(struct sockaddr_in)));
@@ -171,5 +164,25 @@ void sockets::toIpPort(char* buf, size_t size,
 	assert(size > end);
 	snprintf(buf+end, size-end, ":%u", port);
 }
-					   
+
+void sockets::fromIpPort(const char* ip, uint16_t port,
+                         struct sockaddr_in* addr)
+{
+	addr->sin_family = AF_INET;
+	addr->sin_port = hostToNetwork16(port);
+	if (::inet_pton(AF_INET, ip, &addr->sin_addr) <= 0) {
+		//LOG_SYSERR << "sockets::fromIpPort";
+		perror("sockets::fromIpPort");
+	}
+}					   
+
+void sockets::fromIpPort(const char* ip, uint16_t port,
+                         struct sockaddr_in6* addr)
+{
+	addr->sin6_family = AF_INET6;
+	addr->sin6_port = hostToNetwork16(port);
+	if (::inet_pton(AF_INET6, ip, &addr->sin6_addr) <= 0) {
+		perror("sockets::fromIpPort(IPV6)");
+	}
+}
 
