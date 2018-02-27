@@ -25,7 +25,7 @@
 #include "FdManager.h"
 //#include "DecoderMenuSettings.h"
 
-#define _DEBUG
+//#define _DEBUG
 
 #define LOG_TAG "TcpServerSocket"
 #define LOG_LEVEL LOG_PRINT //directly print in console

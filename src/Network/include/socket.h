@@ -44,6 +44,8 @@ class Socket
 public:
 	explicit Socket(int sockfd):sockfd_(sockfd){};
 	 ~Socket();
+	 
+	void Listen();
 
 	/*void Bind();
 	void Listen();

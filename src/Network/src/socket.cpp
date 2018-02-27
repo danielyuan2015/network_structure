@@ -39,3 +39,13 @@ void delete_event(int epollfd,int fd,int state)
     ev.data.fd = fd;
     epoll_ctl(epollfd,EPOLL_CTL_DEL,fd,&ev);
 }
+
+
+#include "SocketOps.h"
+
+using namespace sockets;
+
+void Socket::Listen()
+{
+  sockets::listenOrDie(sockfd_);
+}
