@@ -31,6 +31,8 @@ public:
 	/// Must be called in the same thread as creation of the object.
 	///
 	void loop();
+	void runInLoop(const Functor& cb);
+
 private:
 	bool quit_;
 	ChannelList activeChannels_;

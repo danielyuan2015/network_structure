@@ -37,6 +37,27 @@ protected:
     cNonCopyable() { }
     ~cNonCopyable() { }
 };
+
+//a new socket class
+class Socket
+{
+public:
+	explicit Socket(int sockfd):sockfd_(sockfd){};
+	 ~Socket();
+
+	/*void Bind();
+	void Listen();
+	int Accept(InetAddress* peeraddr);
+	void Shutdown();
+	void ShutdownWrite();*/
+	
+	int fd() const {return sockfd_;}
+
+private:
+	const int sockfd_;
+
+};
+
 void modify_event(int epollfd,int fd,int state);
 void add_event(int epollfd,int fd,int state);
 void delete_event(int epollfd,int fd,int state);

@@ -50,3 +50,8 @@ void EventLoop::loop()
 
 }
 
+void EventLoop::runInLoop(const Functor& cb)
+{
+	cb(); 
+}
+
