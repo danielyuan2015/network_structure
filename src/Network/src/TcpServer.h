@@ -19,7 +19,10 @@
 #include "Ipc.h"
 #include <sys/epoll.h>
 
-class TcpServer:public cSocket,cNonCopyable
+#include "EventLoop.h"
+#include "InetAddress.h"
+
+/*class TcpServer:public cSocket,cNonCopyable
 {
 public:
 	TcpServer(int port = 0);
@@ -73,5 +76,22 @@ private:
 	struct epoll_event ev,events[MAX_EVENTS];
 	
 protected:
+};*/
+using namespace std;
+
+class TcpServer:cNonCopyable
+{
+public:
+	TcpServer(EventLoop* loop,
+				const InetAddress& listenAddr,
+				const string& nameArg,int maxCon);
+	~TcpServer();
+
+private:
+	EventLoop* loop_;  // the acceptor loop
+	const string hostport_;
+	const string name_; //server name
+	int maxConnections_;
 };
+
 #endif

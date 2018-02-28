@@ -47,7 +47,7 @@ InetAddress::InetAddress(uint16_t port)
 
 /// Constructs an endpoint with given ip and port.
 /// @c ip should be "1.2.3.4"
-InetAddress::InetAddress(std::string ip, uint16_t port)
+InetAddress::InetAddress(string ip, uint16_t port)
 {
 	//bzero(&addr_, sizeof addr_);
 	//sockets::fromIpPort(ip.c_str(),port,&addr_);
@@ -56,7 +56,6 @@ InetAddress::InetAddress(std::string ip, uint16_t port)
 
 /// Constructs an endpoint with given ip and port.
 /// @c ip should be "1.2.3.4"
-
 InetAddress::InetAddress(const char *ip, uint16_t port)
 {
 	bzero(&addr_, sizeof addr_);
@@ -66,5 +65,15 @@ InetAddress::InetAddress(const char *ip, uint16_t port)
 const struct sockaddr* InetAddress::getSockAddr() const
 { 
 	return sockets::sockaddr_cast(&addr_); 
+}
+
+//return ip adn port string
+//format: x.x.x.x:port
+string InetAddress::toIpPort() const
+{
+	char buf[32];
+	sockets::toIpPort(buf, sizeof buf, (struct sockaddr *)&addr_);
+	LOGGING("toipPort:%s\r\n",buf);
+	return buf;
 }
 

@@ -21,7 +21,7 @@
 #include "Poller.h"
 
 #define LOG_TAG "Poller"
-#define LOG_LEVEL LOG_PRINT //directly print in console
+#define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
 
 static void epoll_modify_event(int epollfd,int fd,int state)

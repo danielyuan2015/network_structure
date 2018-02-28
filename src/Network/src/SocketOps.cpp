@@ -138,7 +138,7 @@ void sockets::shutdownReadWrite(int sockfd)
 	}
 }
 
-//
+//get ip info from addr and save it in buf
 void sockets::toIp(char *buf, size_t size,
                    const struct sockaddr *addr)
 {
@@ -154,6 +154,7 @@ void sockets::toIp(char *buf, size_t size,
 	}
 }
 
+//get ip and port info from addr and save it in buf
 void sockets::toIpPort(char* buf, size_t size,
                        const struct sockaddr* addr)
 {

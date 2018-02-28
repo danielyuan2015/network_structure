@@ -12,6 +12,10 @@
 #include <unistd.h> //fork()
 #include <sys/wait.h>
 
+#include "TcpServer.h"
+#include "InetAddress.h"
+#include "EventLoop.h"
+
 #define LOG_TAG "Network"
 #define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
@@ -191,7 +195,7 @@ int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventMana
 {
 	LOGGING("InitNetworkServer\r\n");
 	
-	FdManagerSet *ptest = new FdManagerSet(200);
+	/*FdManagerSet *ptest = new FdManagerSet(200);
 	//std::string s1("test1");
 	//std::string s2("test2");
 	ptest->CreatManagerSet("test1",10);
@@ -204,7 +208,12 @@ int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventMana
 	ptest->insert("test2",3);
 	//ptest->CreatManagerSet("test1");
 	//ptest->DeleteManagerSet("test2");
-	ptest->DumpAll();
+	ptest->DumpAll();*/
+
+	EventLoop loop;
+	InetAddress listenAddr(55266);
+	TcpServer *myServer = new TcpServer(&loop,listenAddr,"TestServer",4);
+	loop.loop();
 	
 #ifdef USE_IPC_CLASS
 	gIpcServerPtr = new IPC("/tmp/hf800_rfifo",1024);
@@ -212,9 +221,9 @@ int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventMana
 	gIpcClientPtr = new IpcClient("/tmp/hf800_rfifo",1024);
 #endif
 
-	gNetworkPtr = new Network(tcpPort);
+	/*gNetworkPtr = new Network(tcpPort);
 	gNetworkPtr->RegisterScanDriver(scan_driver,event_manager);
-	gNetworkPtr->RegisterConfiguration(pRConfg);
+	gNetworkPtr->RegisterConfiguration(pRConfg);*/
 }
 
 int StartNetworkServer()

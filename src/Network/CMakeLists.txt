@@ -11,6 +11,7 @@ add_library(network
 	src/FdManager.cpp
 	#src/TcpClientSocket.cpp
 	#src/TcpClient.cpp
+	src/TcpServer.cpp
 	src/SocketOps.cpp
 	src/InetAddress.cpp
 	src/EventLoop.cpp

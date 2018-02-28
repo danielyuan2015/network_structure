@@ -30,7 +30,9 @@ void EventLoop::loop()
 	while (!quit_) {
 		activeChannels_.clear();
 		/* pollReturnTime_ = */
+		LOGGING("begin epoll 1 event\r\n");
 		poller_->poll(kPollTimeMs, &activeChannels_);
+		LOGGING("end epoll 1 event\r\n");
 	  //++iteration_;
 	 /* if (Logger::logLevel() <= Logger::TRACE)
 	  {
