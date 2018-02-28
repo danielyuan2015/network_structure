@@ -62,11 +62,22 @@ Poller::~Poller()
 
 int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 {
+	int savedErrno = errno;
 	int numEvents = epoll_wait(epollfd_,&(*events_.begin()),MAX_EVENTS,timeoutMs);
 	if(numEvents > 0) {
+		LOGGING("%d  events happened\r\n");
 		fillActiveChannels(numEvents,activeChannels);
 		if (numEvents == events_.size()) {
 			events_.resize(events_.size()*2);
+		}
+	} else if(numEvents == 0) {
+    	LOGGING("nothing happended\r\n");
+	} else {
+		// error happens, log uncommon ones
+		if (savedErrno != EINTR) {
+			perror("EPollPoller::poll()\r\n");
+			//errno = savedErrno;
+			//LOG_SYSERR << "EPollPoller::poll()";
 		}
 	}
 }
