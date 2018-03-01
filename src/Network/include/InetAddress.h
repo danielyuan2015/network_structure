@@ -19,6 +19,7 @@ public:
 	explicit InetAddress(uint16_t port = 0);
 	InetAddress(const char *ip, uint16_t port);
 	InetAddress(string ip, uint16_t port);
+	explicit InetAddress(const struct sockaddr_in& addr);
 
 	const struct sockaddr* getSockAddr() const;
 	void setSockAddr(const struct sockaddr_in& addr) { addr_ = addr; }

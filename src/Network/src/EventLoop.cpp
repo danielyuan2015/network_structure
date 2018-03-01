@@ -17,7 +17,6 @@ const int kPollTimeMs = 10000;
 EventLoop::EventLoop():
 quit_(false),poller_(new Poller())
 {
-
 }
 
 EventLoop::~EventLoop()
@@ -75,7 +74,7 @@ void EventLoop::removeChannel(Channel* channel)
 	poller_->removeChannel(channel);
 }
 
-void assertInLoopThread()
+void EventLoop::assertInLoopThread()
 {
   /*if (!isInLoopThread())
   {

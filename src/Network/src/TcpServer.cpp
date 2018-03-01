@@ -54,12 +54,13 @@ void TcpServer::start()
 		std::bind(&Acceptor::listen, acceptor_));
 }
 
+//sockfd: new connection socket fd
 void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 {
 	LOGGING("call newConnection\r\n");
 	//loop_->assertInLoopThread();
 	
-	//InetAddress localAddr(sockets::getLocalAddr(sockfd));
+	InetAddress localAddr(sockets::getLocalAddr(sockfd));
 
 }
 

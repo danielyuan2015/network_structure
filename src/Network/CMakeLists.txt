@@ -13,6 +13,7 @@ add_library(network
 	#src/TcpClient.cpp
 	src/TcpServer.cpp
 	src/Acceptor.cpp
+	src/TcpConnection.cpp
 	src/SocketOps.cpp
 	src/InetAddress.cpp
 	src/EventLoop.cpp

@@ -62,6 +62,13 @@ InetAddress::InetAddress(const char *ip, uint16_t port)
 	sockets::fromIpPort(ip,port,&addr_);
 }
 
+/// Constructs an endpoint with given struct @c sockaddr_in
+/// Mostly used when accepting new connections
+InetAddress::InetAddress(const struct sockaddr_in& addr)
+	:addr_(addr)
+{
+}
+
 const struct sockaddr* InetAddress::getSockAddr() const
 { 
 	return sockets::sockaddr_cast(&addr_); 
