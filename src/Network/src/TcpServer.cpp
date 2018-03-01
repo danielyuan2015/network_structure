@@ -31,34 +31,36 @@
 #define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
 
-/*TcpServer::TcpServer(int port,int maxCon):tcpPort(port),maxConnections(maxCon)
-{
-
-	pDevFdVec_ = new FdManager(maxConnections);
-	LOGGING("Max connectiongs is %d\r\n",maxConnections);
-}
-
-
-TcpServer::~TcpServer()
-{
-	//Close();
-    //this->Stop();
-	if(NULL != pDevFdVec_)
-		delete pDevFdVec_;
-}*/
-
 TcpServer::TcpServer(EventLoop *loop,
                      const InetAddress &listenAddr,
                      const string &nameArg,int maxCon)
   : loop_(loop),
     hostport_(listenAddr.toIpPort()),
     name_(nameArg),
-    maxConnections_(maxCon)
+    maxConnections_(maxCon),
+    acceptor_(new Acceptor(loop, listenAddr,true))
 {
-
+	acceptor_->setNewConnectionCallback(
+		std::bind(&TcpServer::newConnection, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 TcpServer::~TcpServer()
 {
+}
+
+void TcpServer::start()
+{
+	loop_->runInLoop(
+		std::bind(&Acceptor::listen, acceptor_));
+}
+
+void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
+{
+	LOGGING("call newConnection\r\n");
+}
+
+void TcpServer::removeConnection()
+{
+	LOGGING("call removeConnection\r\n");
 }
 

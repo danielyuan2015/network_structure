@@ -54,6 +54,9 @@ public:
 	void ShutdownReadWrite();
 	void ShutdownWrite();
 
+	void setReuseAddr(bool on);
+	void setReusePort(bool on);
+
 	/*void Bind();
 	void Listen();
 	int Accept(InetAddress* peeraddr);

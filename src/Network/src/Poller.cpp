@@ -48,10 +48,13 @@ static void epoll_delete_event(int epollfd,int fd,int state)
     epoll_ctl(epollfd,EPOLL_CTL_DEL,fd,&ev);
 }
 
-Poller::Poller():epollfd_(-1)
+Poller::Poller():epollfd_(-1),events_(kInitEventListSize)
 {
-	epollfd_ = epoll_create(MAX_EVENTS);
-
+	epollfd_ = epoll_create1(EPOLL_CLOEXEC);//epoll_create(MAX_EVENTS);
+	//LOGGING("new poller construct %d\r\n",epollfd_);
+	if (epollfd_ < 0) {
+		printf("Poller: epoll_create error\r\n");
+	}
 }
 
 Poller::~Poller()
@@ -63,9 +66,12 @@ Poller::~Poller()
 int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 {
 	int savedErrno = errno;
-	int numEvents = epoll_wait(epollfd_,&(*events_.begin()),MAX_EVENTS,timeoutMs);
+	//epoll_event _events[MAX_EVENTS];
+	//Eventlist::iterator it = events_.begin();
+
+	int numEvents = epoll_wait(epollfd_,&*events_.begin()/*(epoll_event*)(&(*it))*/,static_cast<int>(events_.size())/*MAX_EVENTS*/,timeoutMs);
 	if(numEvents > 0) {
-		LOGGING("%d  events happened\r\n");
+		LOGGING("%d  events happened\r\n",numEvents);
 		fillActiveChannels(numEvents,activeChannels);
 		if (numEvents == events_.size()) {
 			events_.resize(events_.size()*2);
@@ -75,7 +81,7 @@ int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 	} else {
 		// error happens, log uncommon ones
 		if (savedErrno != EINTR) {
-			perror("EPollPoller::poll()\r\n");
+			perror("EPollPoller::poll() ");
 			//errno = savedErrno;
 			//LOG_SYSERR << "EPollPoller::poll()";
 		}
@@ -129,6 +135,8 @@ void Poller::updateChannel(Channel* channel)
 				}
 			}
 		}
+		LOGGING("EPOLLIN|EPOLLPRI:%d,EPOLLOUT:%d\r\n",EPOLLIN|EPOLLPRI,EPOLLOUT);
+		LOGGING("EPOLL_CTL_ADD:fd=%d,event:%d\r\n",fd,channel->events());
 	    channel->set_index(cAdded);
 	    update(EPOLL_CTL_ADD, channel);
 	} else {
@@ -138,9 +146,11 @@ void Poller::updateChannel(Channel* channel)
 			if(channels_[fd] == channel) {
 				if(index == cAdded) {
 					if (channel->isNoneEvent()) {
+						LOGGING("EPOLL_CTL_DEL\r\n");
 						update(EPOLL_CTL_DEL,channel);
 						channel->set_index(cDeleted);
 					} else {
+						LOGGING("EPOLL_CTL_MOD\r\n");
 						update(EPOLL_CTL_MOD,channel);
 					}
 				}

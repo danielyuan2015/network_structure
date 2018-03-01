@@ -84,3 +84,25 @@ void Socket::ShutdownReadWrite()
 {
 	sockets::shutdownReadWrite(sockfd_);
 }
+
+void Socket::setReuseAddr(bool on)
+{
+	int optval = on ? 1 : 0;
+	int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR,
+	           &optval, static_cast<socklen_t>(sizeof optval));
+	if (ret < 0) {
+		printf("set socket SO_REUSEADDR error \r\n");
+	}
+}
+
+void Socket::setReusePort(bool on)
+{
+	int optval = on ? 1 : 0;
+	
+	//printf("setReusePort:optval=%d\r\n",optval);
+	int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT,
+	                     &optval, static_cast<socklen_t>(sizeof optval));
+	if (ret < 0) {
+		printf("set socket SO_REUSEPORT error \r\n");
+	}
+}

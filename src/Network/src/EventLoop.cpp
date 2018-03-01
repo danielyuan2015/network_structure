@@ -9,7 +9,7 @@
 #include "EventLoop.h"
 
 #define LOG_TAG "EventLoop"
-#define LOG_LEVEL LOG_PRINT //directly print in console
+#define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
 
 const int kPollTimeMs = 10000;
@@ -55,5 +55,23 @@ void EventLoop::loop()
 void EventLoop::runInLoop(const Functor& cb)
 {
 	cb(); 
+}
+
+void EventLoop::updateChannel(Channel* channel)
+{
+	//assert(channel->ownerLoop() == this);
+	//assertInLoopThread();
+	poller_->updateChannel(channel);
+}
+
+void EventLoop::removeChannel(Channel* channel)
+{
+	//assert(channel->ownerLoop() == this);
+	//assertInLoopThread();
+	/*if (eventHandling_) {
+		assert(currentActiveChannel_ == channel ||
+		std::find(activeChannels_.begin(), activeChannels_.end(), channel) == activeChannels_.end());
+	}*/
+	poller_->removeChannel(channel);
 }
 

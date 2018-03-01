@@ -9,12 +9,15 @@
 
 #include "socket.h"
 #include "Channel.h"
+#include "EventLoop.h"
 #include <thread>
 #include <map>
-#include <mutex>
+//#include <mutex>
 #include <vector>
 
 #define MAX_EVENTS 100
+
+class Channel;
 
 class Poller:public cNonCopyable
 {
@@ -47,6 +50,7 @@ public:
 	}
 
 private:
+	static const int kInitEventListSize = 16;
 	int epollfd_;
 	//int events_;
 	//int revents_;

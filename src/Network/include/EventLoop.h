@@ -12,6 +12,9 @@
 #include "Channel.h"
 #include "Poller.h"
 
+class Channel;
+class Poller;
+
 ///
 /// Reactor, at most one per thread.
 ///
@@ -32,6 +35,9 @@ public:
 	///
 	void loop();
 	void runInLoop(const Functor& cb);
+	
+	void updateChannel(Channel* channel);
+	void removeChannel(Channel* channel);
 
 private:
 	bool quit_;

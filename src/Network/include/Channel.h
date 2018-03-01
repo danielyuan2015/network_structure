@@ -8,12 +8,18 @@
 #define SRC_CHANNEL_H_
 
 #include "socket.h"
+#include <functional>
+#include <iostream>
+#include "EventLoop.h"
+
+class EventLoop;
 
 class Channel:public cNonCopyable
 {
 public:
 	typedef std::function<void()> EventCallback;
-	Channel(int fd);
+
+	Channel(EventLoop* loop,int fd);
 	~Channel();
 	
 	void handleEvent();
@@ -35,6 +41,11 @@ public:
 	void setErrorCallback(const EventCallback& cb)
 	{ errorCallback_ = cb; }
 	
+	void enableReading() { events_ |= kReadEvent; update(); }
+	void disableReading() { events_ &= ~kReadEvent; update(); }
+	void enableWriting() { events_ |= kWriteEvent; update(); }
+	void disableWriting() { events_ &= ~kWriteEvent; update(); }
+	
 	int fd() const { return fd_; }
 
 private:
@@ -43,7 +54,7 @@ private:
 	static const int kReadEvent;
 	static const int kWriteEvent;
 
-	//EventLoop* loop_;
+	EventLoop* loop_;
 	const int  fd_;
 	int 	   events_;
 	int 	   revents_;

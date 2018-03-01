@@ -11,6 +11,7 @@
 
 namespace sockets
 {
+	int createNonblockingOrDie();
 	int  accept(int sockfd, struct sockaddr_in* addr);
 	int  connect(int sockfd, const struct sockaddr* addr);
 	void bindOrDie(int sockfd, const struct sockaddr* addr);

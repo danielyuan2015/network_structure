@@ -21,6 +21,7 @@
 
 #include "EventLoop.h"
 #include "InetAddress.h"
+#include "Acceptor.h"
 
 /*class TcpServer:public cSocket,cNonCopyable
 {
@@ -86,9 +87,17 @@ public:
 				const InetAddress& listenAddr,
 				const string& nameArg,int maxCon);
 	~TcpServer();
+	
+	void start();
 
 private:
+	/// Not thread safe, but in loop
+	void newConnection(int sockfd, const InetAddress& peerAddr);
+	/// Thread safe.
+	void removeConnection();
+
 	EventLoop* loop_;  // the acceptor loop
+	Acceptor* acceptor_;
 	const string hostport_;
 	const string name_; //server name
 	int maxConnections_;

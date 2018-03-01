@@ -53,6 +53,16 @@ void sockets::listenOrDie(int sockfd)
 	}
 }
 
+int sockets::createNonblockingOrDie()
+{
+	int sockfd = ::socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC,IPPROTO_TCP);
+	if (sockfd < 0) {
+		printf("sockets::createNonblockingOrDie\r\n");
+		printf("errno:%s\r\n",strerror(errno));
+	}
+	return sockfd;
+}
+
 int sockets::accept(int sockfd, struct sockaddr_in *addr)
 {
 	socklen_t addrlen = static_cast<socklen_t>(sizeof *addr);

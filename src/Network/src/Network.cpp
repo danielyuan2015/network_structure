@@ -213,6 +213,7 @@ int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventMana
 	EventLoop loop;
 	InetAddress listenAddr(55266);
 	TcpServer *myServer = new TcpServer(&loop,listenAddr,"TestServer",4);
+	myServer->start();
 	loop.loop();
 	
 #ifdef USE_IPC_CLASS
