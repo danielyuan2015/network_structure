@@ -57,6 +57,10 @@ void TcpServer::start()
 void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 {
 	LOGGING("call newConnection\r\n");
+	//loop_->assertInLoopThread();
+	
+	//InetAddress localAddr(sockets::getLocalAddr(sockfd));
+
 }
 
 void TcpServer::removeConnection()

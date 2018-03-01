@@ -34,6 +34,8 @@ namespace sockets
 	
 	struct sockaddr* sockaddr_cast(struct sockaddr_in *addr);
 	const struct sockaddr* sockaddr_cast(const struct sockaddr_in* addr);
+	
+	struct sockaddr_in getLocalAddr(int sockfd);
 
 	inline uint64_t hostToNetwork64(uint64_t host64)
 	{

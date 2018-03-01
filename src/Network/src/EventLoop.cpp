@@ -75,3 +75,11 @@ void EventLoop::removeChannel(Channel* channel)
 	poller_->removeChannel(channel);
 }
 
+void assertInLoopThread()
+{
+  /*if (!isInLoopThread())
+  {
+	abortNotInLoopThread();
+  }*/
+}
+

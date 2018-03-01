@@ -50,8 +50,8 @@ static void epoll_delete_event(int epollfd,int fd,int state)
 
 Poller::Poller():epollfd_(-1),events_(kInitEventListSize)
 {
-	epollfd_ = epoll_create1(EPOLL_CLOEXEC);//epoll_create(MAX_EVENTS);
-	//LOGGING("new poller construct %d\r\n",epollfd_);
+	epollfd_ = epoll_create1(EPOLL_CLOEXEC);
+	//epollfd_ = epoll_create(MAX_EVENTS);//old function
 	if (epollfd_ < 0) {
 		printf("Poller: epoll_create error\r\n");
 	}
@@ -66,14 +66,13 @@ Poller::~Poller()
 int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 {
 	int savedErrno = errno;
-	//epoll_event _events[MAX_EVENTS];
-	//Eventlist::iterator it = events_.begin();
 
-	int numEvents = epoll_wait(epollfd_,&*events_.begin()/*(epoll_event*)(&(*it))*/,static_cast<int>(events_.size())/*MAX_EVENTS*/,timeoutMs);
+	int numEvents = epoll_wait(epollfd_,&*events_.begin(),static_cast<int>(events_.size())/*MAX_EVENTS*/,timeoutMs);
 	if(numEvents > 0) {
 		LOGGING("%d  events happened\r\n",numEvents);
 		fillActiveChannels(numEvents,activeChannels);
 		if (numEvents == events_.size()) {
+			LOGGING("max events size reached,nned resize\r\n");
 			events_.resize(events_.size()*2);
 		}
 	} else if(numEvents == 0) {
