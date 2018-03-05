@@ -11,6 +11,7 @@
 #include "socket.h"
 #include "Channel.h"
 #include "Poller.h"
+#include <thread>
 
 class Channel;
 class Poller;
@@ -34,17 +35,23 @@ public:
 	/// Must be called in the same thread as creation of the object.
 	///
 	void loop();
+	void quitLoop();
 	void runInLoop(const Functor& cb);
 	
 	void updateChannel(Channel* channel);
 	void removeChannel(Channel* channel);
-	
-	void assertInLoopThread();
 
+	bool isInLoopThread() const;	
+	void assertInLoopThread();
+	
 private:
 	bool quit_;
+	//const pid_t threadId_;
+	std::thread::id threadId_;
 	ChannelList activeChannels_;
 	Channel* currentActiveChannel_;
+	Channel* wakeupChannel_;
+	int wakeupFd_;
 	Poller *poller_;
 protected:
 };

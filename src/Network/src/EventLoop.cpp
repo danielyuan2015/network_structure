@@ -4,6 +4,9 @@
  *  Created on: Feb 11, 2018
  *      Author: Daniel yuan
  */
+#include <sys/eventfd.h> //eventfd
+#include <unistd.h>  //close
+
 #include "realtime.h"
 #include "logging.h"
 #include "EventLoop.h"
@@ -14,14 +17,40 @@
 
 const int kPollTimeMs = 10000;
 
-EventLoop::EventLoop():
-quit_(false),poller_(new Poller())
+//we use eventfd here
+static int createEventfd()
 {
+	int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+	if (evtfd < 0) {
+		perror("Failed in eventfd");
+		abort();
+	}
+	return evtfd;
+}
+
+EventLoop::EventLoop():
+	quit_(false),
+	poller_(new Poller()),
+	wakeupFd_(createEventfd()),
+	wakeupChannel_(new Channel(this, wakeupFd_))
+{
+	LOGGING("current thread id:%d,eventLoop id:%d\r\n",std::this_thread::get_id(),threadId_);
 }
 
 EventLoop::~EventLoop()
 {
+	//need test
+	//delete poller_;
+	//delete wakeupChannel_;
+	//wakeupChannel_->disableAll();
+	//wakeupChannel_->remove();
+	::close(wakeupFd_);
 
+}
+
+bool EventLoop::isInLoopThread() const 
+{
+	return threadId_ == std::this_thread::get_id(); 
 }
 
 void EventLoop::loop()
@@ -49,6 +78,17 @@ void EventLoop::loop()
 	  //doPendingFunctors();
 	}
 
+}
+
+void EventLoop::quitLoop()
+{
+	quit_ = true;
+	// There is a chance that loop() just executes while(!quit_) and exits,
+	// then EventLoop destructs, then we are accessing an invalid object.
+	// Can be fixed using mutex_ in both places.
+	/*if (!isInLoopThread()) {
+		wakeup();
+	}*/
 }
 
 void EventLoop::runInLoop(const Functor& cb)
