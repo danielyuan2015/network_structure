@@ -30,6 +30,7 @@
 #define LOG_TAG "TcpServer"
 #define LOG_LEVEL LOG_PRINT
 #define LOGGING(...) log_print(LOG_LEVEL,LOG_TAG,__VA_ARGS__)
+#define PRINTFUNC() LOGGING("%s\r\n",__func__);
 
 TcpServer::TcpServer(EventLoop *loop,
                      const InetAddress &listenAddr,

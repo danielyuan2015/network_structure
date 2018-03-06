@@ -12,6 +12,7 @@
 #include <iostream>
 #include "EventLoop.h"
 
+using namespace std;
 class EventLoop;
 
 class Channel:public cNonCopyable
@@ -23,10 +24,6 @@ public:
 	~Channel();
 	
 	void handleEvent();
-
-	int events() const { return events_; }
-	void set_revents(int revt) { revents_ = revt; } // used by pollers
-	bool isNoneEvent() const { return events_ == kNoneEvent; }
 
 	// for Poller
 	int index() { return index_; }
@@ -45,11 +42,22 @@ public:
 	void disableReading() { events_ &= ~kReadEvent; update(); }
 	void enableWriting() { events_ |= kWriteEvent; update(); }
 	void disableWriting() { events_ &= ~kWriteEvent; update(); }
-	
-	int fd() const { return fd_; }
+  	void disableAll() { events_ = kNoneEvent; update(); }
+
+	int fd() const { return fd_; }	
+	int events() const { return events_; }
+	void set_revents(int revt) { revents_ = revt; } // used by pollers
+	bool isNoneEvent() const { return events_ == kNoneEvent; }
+
+
+	// for debug
+	string reventsToString() const;
+	string eventsToString() const;
 
 private:
 	void update();
+	static string eventsToString(int fd, int ev);
+
 	static const int kNoneEvent;
 	static const int kReadEvent;
 	static const int kWriteEvent;

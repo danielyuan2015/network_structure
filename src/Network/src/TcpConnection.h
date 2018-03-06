@@ -13,6 +13,18 @@
 #include "socket.h"
 
 using namespace std;
+class TcpConnection;
+
+typedef shared_ptr<TcpConnection> TcpConnectionPtr;
+typedef function<void()> TimerCallback;
+typedef function<void (const TcpConnectionPtr&)> ConnectionCallback;
+typedef function<void (const TcpConnectionPtr&)> CloseCallback;
+typedef function<void (const TcpConnectionPtr&)> WriteCompleteCallback;
+typedef function<void (const TcpConnectionPtr&, size_t)> HighWaterMarkCallback;
+//typedef boost::function<void (const TcpConnectionPtr&,Buffer*,Timestamp)> MessageCallback;
+// the data has been read to (buf, len)
+typedef function<void (const TcpConnectionPtr&,char*,int)> MessageCallback;
+
 ///
 /// TCP connection, for both client and server usage.
 ///
@@ -29,18 +41,35 @@ public:
 				  const InetAddress& peerAddr);
 	~TcpConnection();
 	
+	EventLoop* getLoop() const { return loop_; }
+	const string& name() const { return name_; }
+	const InetAddress& localAddress() const { return localAddr_; }
+	const InetAddress& peerAddress() const { return peerAddr_; }
+	bool connected() const { return state_ == kConnected; }
+	
+private:
+	enum StateE { kDisconnected, kConnecting, kConnected, kDisconnecting };
 	void handleRead();
 	void handleWrite();
 	void handleClose();
 	void handleError();
+	
+	void setState(StateE s) { state_ = s; }
+	const char* stateToString() const;
 
-private:
 	Channel* channel_;
 	EventLoop* loop_;
 	Socket* socket_;
 	const string name_;
 	const InetAddress localAddr_;
 	const InetAddress peerAddr_;
+	StateE state_;
+
+	ConnectionCallback connectionCallback_;
+	MessageCallback messageCallback_;
+	WriteCompleteCallback writeCompleteCallback_;
+	HighWaterMarkCallback highWaterMarkCallback_;
+	CloseCallback closeCallback_;
 
 };
 

@@ -9,6 +9,8 @@
 #include "logging.h"
 #include "Channel.h"
 
+#include <sstream>
+
 #if 0
 BOOST_STATIC_ASSERT(EPOLLIN == POLLIN);
 BOOST_STATIC_ASSERT(EPOLLPRI == POLLPRI);
@@ -71,6 +73,39 @@ void Channel::handleEvent()
 		if (writeCallback_) writeCallback_();
 	}
 
+}
+
+
+string Channel::reventsToString() const
+{
+	return eventsToString(fd_, revents_);
+}
+
+string Channel::eventsToString() const
+{
+	return eventsToString(fd_, events_);
+}
+
+string Channel::eventsToString(int fd, int ev)
+{
+	std::ostringstream oss;
+	oss << fd << ": ";
+	if (ev & EPOLLIN)
+		oss << "IN ";
+	if (ev & EPOLLPRI)
+		oss << "PRI ";
+	if (ev & EPOLLOUT)
+		oss << "OUT ";
+	if (ev & EPOLLHUP)
+		oss << "HUP ";
+	if (ev & EPOLLRDHUP)
+		oss << "RDHUP ";
+	if (ev & EPOLLERR)
+		oss << "ERR ";
+	//if (ev & EPOLLNVAL)
+		//oss << "NVAL ";
+
+	return oss.str().c_str();
 }
 
 
