@@ -30,6 +30,7 @@ static int createEventfd()
 
 EventLoop::EventLoop():
 	quit_(false),
+	threadId_(std::this_thread::get_id()),
 	poller_(new Poller()),
 	wakeupFd_(createEventfd()),
 	wakeupChannel_(new Channel(this, wakeupFd_))

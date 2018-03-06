@@ -29,9 +29,9 @@ public:
 
 	}PollEventType_t;*/
 	typedef enum ChannelIndex {
-		cNew = 0,
-		cAdded,
-		cDeleted
+		cNew = -1,
+		cAdded = 1,
+		cDeleted = 2
 	}ChannelIndex_t;
 
 	Poller();

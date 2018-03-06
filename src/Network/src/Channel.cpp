@@ -28,7 +28,11 @@ const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
 const int Channel::kWriteEvent = EPOLLOUT;
 
 Channel::Channel(EventLoop* loop,int fd)
-:loop_(loop),fd_(fd),events_(0),revents_(0)
+	:loop_(loop),
+	fd_(fd),
+	events_(0),
+	revents_(0),
+	index_(-1)
 {
 }
 
