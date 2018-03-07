@@ -10,6 +10,7 @@
 #include "socket.h"
 #include <functional>
 #include <iostream>
+#include <memory>
 #include "EventLoop.h"
 
 using namespace std;
@@ -23,7 +24,10 @@ public:
 	Channel(EventLoop* loop,int fd);
 	~Channel();
 	
-	void handleEvent();
+	/// Tie this channel to the owner object managed by shared_ptr,
+	/// prevent the owner object being destroyed in handleEvent.
+	void tie(const std::shared_ptr<void>&);	
+	void handleEvent(/*Timestamp receiveTime*/);
 
 	// for Poller
 	int index() { return index_; }
@@ -44,19 +48,23 @@ public:
 	void disableWriting() { events_ &= ~kWriteEvent; update(); }
   	void disableAll() { events_ = kNoneEvent; update(); }
 
-	int fd() const { return fd_; }	
+	int fd() const { return fd_; }
+
 	int events() const { return events_; }
 	void set_revents(int revt) { revents_ = revt; } // used by pollers
 	bool isNoneEvent() const { return events_ == kNoneEvent; }
+	
+	void remove();
 
 
 	// for debug
-	string reventsToString() const;
-	string eventsToString() const;
+	std::string reventsToString() const;
+	std::string eventsToString() const;
 
 private:
 	void update();
-	static string eventsToString(int fd, int ev);
+	void handleEventWithGuard(/*Timestamp receiveTime*/);
+	static std::string eventsToString(int fd, int ev);
 
 	static const int kNoneEvent;
 	static const int kReadEvent;
@@ -69,9 +77,11 @@ private:
 	int 	   index_; // used by Poller.
 	bool	   logHup_;
 
-	//boost::weak_ptr<void> tie_;
+	std::weak_ptr<void> tie_;
 	bool tied_;
 	bool eventHandling_;
+	bool addedToLoop_;
+
 	//ReadEventCallback readCallback_;
 	EventCallback readCallback_;
 	EventCallback writeCallback_;

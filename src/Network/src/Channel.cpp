@@ -34,7 +34,11 @@ Channel::Channel(EventLoop* loop,int fd)
 	fd_(fd),
 	events_(0),
 	revents_(0),
-	index_(-1)
+	index_(-1),
+	//logHup_(true),
+	tied_(false),
+	eventHandling_(false),
+	addedToLoop_(false)
 {
 }
 
@@ -42,13 +46,41 @@ Channel::~Channel()
 {
 }
 
-void Channel::update()
+void Channel::tie(const std::shared_ptr<void>& obj)
 {
-  //addedToLoop_ = true;
-  loop_->updateChannel(this);
+	tie_ = obj;
+	tied_ = true;
 }
 
-void Channel::handleEvent()
+void Channel::update()
+{
+	addedToLoop_ = true;
+	loop_->updateChannel(this);
+}
+
+void Channel::remove()
+{
+	//assert(isNoneEvent());
+	if(isNoneEvent()) {
+		addedToLoop_ = false;
+		loop_->removeChannel(this);
+	}
+}
+
+void Channel::handleEvent(/*Timestamp receiveTime*/)
+{
+	std::shared_ptr<void> guard;
+	if (tied_) {
+		guard = tie_.lock();
+		if (guard) {
+			handleEventWithGuard(/*receiveTime*/);
+		}
+	} else {
+		handleEventWithGuard(/*receiveTime*/);
+	}
+}
+
+void Channel::handleEventWithGuard(/*Timestamp receiveTime*/)
 {
 	LOGGING("handle_event(),revents_:%d\r\n",revents_);
 
