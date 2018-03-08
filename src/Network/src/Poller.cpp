@@ -48,7 +48,9 @@ static void epoll_delete_event(int epollfd,int fd,int state)
     epoll_ctl(epollfd,EPOLL_CTL_DEL,fd,&ev);
 }
 
-Poller::Poller():epollfd_(-1),events_(kInitEventListSize)
+Poller::Poller():
+	epollfd_(-1),
+	events_(kInitEventListSize)
 {
 	epollfd_ = epoll_create1(EPOLL_CLOEXEC);
 	//epollfd_ = epoll_create(MAX_EVENTS);//old function
@@ -60,7 +62,7 @@ Poller::Poller():epollfd_(-1),events_(kInitEventListSize)
 Poller::~Poller()
 {
 	if(epollfd_ > 0)
-		close(epollfd_);
+		::close(epollfd_);
 }
 
 int Poller::poll(int timeoutMs,ChannelList* activeChannels)
@@ -85,6 +87,7 @@ int Poller::poll(int timeoutMs,ChannelList* activeChannels)
 			//LOG_SYSERR << "EPollPoller::poll()";
 		}
 	}
+	logChannels();
 }
 
 void Poller::fillActiveChannels(int numEvents,ChannelList* activeChannels) const
@@ -109,7 +112,7 @@ void Poller::update(int operation, Channel* channel)
 
 	if (epoll_ctl(epollfd_, operation, fd, &event) < 0) {
 		//if (operation == EPOLL_CTL_DEL) {
-			LOGGING("epoll_ctl op=%d,fd=%d\r\n",operation,fd);
+			LOGGING("epoll_ctl failed! op=%d,fd=%d\r\n",operation,fd);
 		//} else {
 			//LOGGING("epoll_ctl op=%d,fd=%d\r\n",operation,fd);
 		//}
@@ -178,3 +181,15 @@ void Poller::removeChannel(Channel* channel)
 	}
 }
 
+void Poller::logChannels()
+{
+	int cnt = 0;
+	ChannelMap::const_iterator it;
+
+	printf("------begin log channels------\r\n");
+	
+	for(it=channels_.begin();it!=channels_.end();++it) {
+		printf("[%d] fd=%d events:%s\r\n",cnt,it->first,it->second->eventsToString().c_str());	
+	}
+	printf("------end log channels------\r\n");
+}

@@ -47,15 +47,17 @@ public:
 	void enableWriting() { events_ |= kWriteEvent; update(); }
 	void disableWriting() { events_ &= ~kWriteEvent; update(); }
   	void disableAll() { events_ = kNoneEvent; update(); }
+	bool isWriting() const { return events_ & kWriteEvent; }
+	bool isReading() const { return events_ & kReadEvent; }
 
 	int fd() const { return fd_; }
+	EventLoop* ownerLoop() { return loop_; }
 
 	int events() const { return events_; }
 	void set_revents(int revt) { revents_ = revt; } // used by pollers
 	bool isNoneEvent() const { return events_ == kNoneEvent; }
 	
 	void remove();
-
 
 	// for debug
 	std::string reventsToString() const;

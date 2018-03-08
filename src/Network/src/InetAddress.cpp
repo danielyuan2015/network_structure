@@ -80,7 +80,7 @@ string InetAddress::toIpPort() const
 {
 	char buf[32];
 	sockets::toIpPort(buf, sizeof buf, (struct sockaddr *)&addr_);
-	LOGGING("toipPort:%s\r\n",buf);
+	//LOGGING("toipPort:%s\r\n",buf);
 	return buf;
 }
 

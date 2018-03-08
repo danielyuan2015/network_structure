@@ -40,10 +40,18 @@ Channel::Channel(EventLoop* loop,int fd)
 	eventHandling_(false),
 	addedToLoop_(false)
 {
+	LOGGING("structor fd_= %d\r\n",fd_);
 }
 
 Channel::~Channel()
 {
+/*	assert(!eventHandling_);
+	assert(!addedToLoop_);
+	if (loop_->isInLoopThread())
+	{
+	  assert(!loop_->hasChannel(this));
+	}
+*/
 }
 
 void Channel::tie(const std::shared_ptr<void>& obj)
@@ -82,6 +90,7 @@ void Channel::handleEvent(/*Timestamp receiveTime*/)
 
 void Channel::handleEventWithGuard(/*Timestamp receiveTime*/)
 {
+	eventHandling_ = true;
 	LOGGING("handle_event(),revents_:%d\r\n",revents_);
 
 	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
@@ -104,7 +113,7 @@ void Channel::handleEventWithGuard(/*Timestamp receiveTime*/)
 	if (revents_ & EPOLLOUT) {
 		if (writeCallback_) writeCallback_();
 	}
-
+	eventHandling_ = false;
 }
 
 

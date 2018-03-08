@@ -22,6 +22,7 @@
 #include "EventLoop.h"
 #include "InetAddress.h"
 #include "Acceptor.h"
+#include "TcpConnection.h"
 
 /*class TcpServer:public cSocket,cNonCopyable
 {
@@ -83,24 +84,51 @@ using namespace std;
 class TcpServer:cNonCopyable
 {
 public:
+	typedef map<string,TcpConnectionPtr> ConnectionMap;
+
 	TcpServer(EventLoop* loop,
 				const InetAddress& listenAddr,
 				const string& nameArg,int maxCon);
 	~TcpServer();
 	
 	void start();
+	
+	/// Set connection callback.
+	/// Not thread safe.
+	void setConnectionCallback(const ConnectionCallback& cb)
+	{ connectionCallback_ = cb; }
+
+	/// Set message callback.
+	/// Not thread safe.
+	void setMessageCallback(const MessageCallback& cb)
+	{ messageCallback_ = cb; }
+
+	/// Set write complete callback.
+	/// Not thread safe.
+	void setWriteCompleteCallback(const WriteCompleteCallback& cb)
+	{ writeCompleteCallback_ = cb; }
 
 private:
 	/// Not thread safe, but in loop
 	void newConnection(int sockfd, const InetAddress& peerAddr);
 	/// Thread safe.
-	void removeConnection();
+	void removeConnection(const TcpConnectionPtr& conn);
+  	/// Not thread safe, but in loop	
+	void removeConnectionInLoop(const TcpConnectionPtr& conn);
+	
+	ConnectionCallback connectionCallback_;
+	MessageCallback messageCallback_;
+	WriteCompleteCallback writeCompleteCallback_;
 
 	EventLoop* loop_;  // the acceptor loop
 	Acceptor* acceptor_;
 	const string hostport_;
 	const string name_; //server name
 	int maxConnections_;
+	
+	// always in loop thread
+	int nextConnId_;
+	ConnectionMap connections_;
 };
 
 #endif

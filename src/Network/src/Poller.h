@@ -50,6 +50,7 @@ public:
 	}
 
 private:
+	void logChannels();
 	static const int kInitEventListSize = 16;
 	int epollfd_;
 	//int events_;
