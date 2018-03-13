@@ -44,7 +44,8 @@ void defaultMessageCallback(const TcpConnectionPtr&,char*buf,int size/*Buffer* b
     socket_(new Socket(sockfd)),
     channel_(new Channel(loop, sockfd)),
     localAddr_(localAddr),
-    peerAddr_(peerAddr)
+    peerAddr_(peerAddr),
+	highWaterMark_(64*1024*1024)
 {
 	channel_->setReadCallback(
 		bind(&TcpConnection::handleRead, this/*, std::placeholders::_1*/));
@@ -67,10 +68,84 @@ TcpConnection::~TcpConnection()
 	LOGGING("TcpConnection::dtor[%s] at fd=%d state=%s\r\n",
 		name_.c_str(),channel_->fd(),stateToString());	      
 	//assert(state_ == kDisconnected);
-	//test here
-	//sockets::shutdownReadWrite(channel_->fd());
-	//sockets::close(channel_->fd());
+	
+	// daniel test here
+	sockets::shutdownReadWrite(channel_->fd());
+	sockets::close(channel_->fd());
 }
+
+void TcpConnection::send(const void* data, int len)
+{
+	//send(StringPiece(static_cast<const char*>(data), len));
+	sendInLoop(data,len);		
+}
+
+void TcpConnection::sendInLoop(const void* data, size_t len)
+{
+	loop_->assertInLoopThread();
+	ssize_t nwrote = 0;
+	size_t remaining = len;
+	bool faultError = false;
+	if (state_ == kDisconnected) {
+		//LOG_WARN << "disconnected, give up writing";
+		printf("disconnected, give up writing\r\n");
+		return;
+	}
+	// if no thing in output queue, try writing directly
+	if (!channel_->isWriting() && outputBuffer_.readableBytes() == 0) {
+		nwrote = sockets::write(channel_->fd(), data, len);
+		if (nwrote >= 0) {
+			remaining = len - nwrote;
+			if (remaining == 0 && writeCompleteCallback_) {
+				loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
+			}
+		} else  {// nwrote < 0
+			nwrote = 0;
+			if (errno != EWOULDBLOCK) {
+				//LOG_SYSERR << "TcpConnection::sendInLoop";
+				perror( "TcpConnection::sendInLoop");
+				if (errno == EPIPE || errno == ECONNRESET) {// FIXME: any others?
+					faultError = true;
+				}
+			}
+		}
+	}
+
+	//assert(remaining <= len);
+	if(remaining <= len) {
+		if (!faultError && remaining > 0) {
+			size_t oldLen = outputBuffer_.readableBytes();
+			LOGGING("remaining data %d\r\n",oldLen);
+			if (oldLen + remaining >= highWaterMark_&& oldLen < highWaterMark_
+				&& highWaterMarkCallback_) {
+				loop_->queueInLoop(std::bind(highWaterMarkCallback_, shared_from_this(), oldLen + remaining));
+			}
+			outputBuffer_.append(static_cast<const char*>(data)+nwrote, remaining);
+			if (!channel_->isWriting()) {
+				channel_->enableWriting();
+			}
+		}	
+	}
+}
+
+void TcpConnection::forceClose()
+{
+	// FIXME: use compare and swap
+	if (state_ == kConnected || state_ == kDisconnecting) {
+		setState(kDisconnecting);
+		loop_->queueInLoop(std::bind(&TcpConnection::forceCloseInLoop, shared_from_this()));
+	}
+}
+
+void TcpConnection::forceCloseInLoop()
+{
+	loop_->assertInLoopThread();
+	if (state_ == kConnected || state_ == kDisconnecting) {
+		// as if we received 0 byte in handleRead();
+		handleClose();
+	}
+}
+
 
 void TcpConnection::shutdown()
 {
@@ -115,6 +190,7 @@ void TcpConnection::connectDestroyed()
 	}
 	channel_->remove();
 }
+
 void TcpConnection::handleRead()
 {
 	char buf[1024] = {0};
@@ -139,6 +215,35 @@ void TcpConnection::handleRead()
 void TcpConnection::handleWrite()
 {
 	PRINTFUNC;
+	loop_->assertInLoopThread();
+	if (channel_->isWriting()) {
+		ssize_t n = sockets::write(channel_->fd(),
+		outputBuffer_.peek(),
+		outputBuffer_.readableBytes());
+		if (n > 0) {
+			outputBuffer_.retrieve(n);
+			if (outputBuffer_.readableBytes() == 0) {
+				channel_->disableWriting();
+				if (writeCompleteCallback_) {
+					loop_->queueInLoop(std::bind(writeCompleteCallback_, shared_from_this()));
+				}
+				if (state_ == kDisconnecting) {
+					shutdownInLoop();
+				}
+			}
+		} else {
+			//LOG_SYSERR << "TcpConnection::handleWrite";
+			perror( "TcpConnection::handleWrite");
+			// if (state_ == kDisconnecting)
+			// {
+			//   shutdownInLoop();
+			// }
+		}
+	} else {
+	   //LOG_TRACE << "Connection fd = " << channel_->fd()
+				 //<< " is down, no more writing";
+		LOGGING("Connection fd = %d is down, no more writing\r\n",channel_->fd());
+	}
 }
 
 void TcpConnection::handleClose()

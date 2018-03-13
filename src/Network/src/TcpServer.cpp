@@ -34,11 +34,11 @@
 
 TcpServer::TcpServer(EventLoop *loop,
                      const InetAddress &listenAddr,
-                     const string &nameArg,int maxCon)
+                     const string &nameArg/*,int maxCon*/)
   : loop_(loop),
     hostport_(listenAddr.toIpPort()),
     name_(nameArg),
-    maxConnections_(maxCon),
+    //maxConnections_(maxCon),
     acceptor_(new Acceptor(loop, listenAddr,true)),
     connectionCallback_(defaultConnectionCallback),
     messageCallback_(defaultMessageCallback),

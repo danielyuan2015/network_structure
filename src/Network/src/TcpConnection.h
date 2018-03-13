@@ -11,6 +11,7 @@
 #include "EventLoop.h"
 #include "InetAddress.h"
 #include "socket.h"
+#include "Buffer.h"
 
 #include <memory> //shared_ptr
 
@@ -53,7 +54,11 @@ public:
 	bool connected() const { return state_ == kConnected; }
   	bool disconnected() const { return state_ == kDisconnected; }
 
+	void send(const void* message, int len);
+	//void send(const StringPiece& message);
+
   	void shutdown(); // NOT thread safe, no simultaneous calling
+	void forceClose();
 
 	void setConnectionCallback(const ConnectionCallback& cb)
 	{ connectionCallback_ = cb; }
@@ -83,8 +88,10 @@ private:
 	void handleClose();
 	void handleError();
 
+	void sendInLoop(const void* message, size_t len);
 	void shutdownInLoop();
-  
+	void forceCloseInLoop();
+	
 	void setState(StateE s) { state_ = s; }
 	const char* stateToString() const;
 
@@ -101,6 +108,10 @@ private:
 	WriteCompleteCallback writeCompleteCallback_;
 	HighWaterMarkCallback highWaterMarkCallback_;
 	CloseCallback closeCallback_;
+	
+	size_t highWaterMark_;
+	Buffer inputBuffer_;
+	Buffer outputBuffer_; // FIXME: use list<Buffer> as output buffer.
 
 };
 

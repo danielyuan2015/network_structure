@@ -37,11 +37,11 @@ EventLoop::EventLoop():
 	threadId_(std::this_thread::get_id()),
 	poller_(new Poller()),
 	wakeupFd_(createEventfd()),
-	//wakeupChannel_(new Channel(this, wakeupFd_)),
+	wakeupChannel_(new Channel(this, wakeupFd_)),
 	currentActiveChannel_(NULL)
 {
 	LOGGING("current thread id:%d,eventLoop id:%d\r\n",std::this_thread::get_id(),threadId_);
-	LOGGING("wakeupFd_ = %d\r\n",wakeupFd_);
+	//LOGGING("wakeupFd_ = %d\r\n",wakeupFd_);
 	wakeupChannel_= new Channel(this, wakeupFd_);
 	wakeupChannel_->setReadCallback(std::bind(&EventLoop::handleRead, this));
 	// we are always reading the wakeupfd
@@ -66,6 +66,12 @@ bool EventLoop::isInLoopThread() const
 }
 
 void EventLoop::loop()
+{
+	thread_ = std::thread(std::bind(& EventLoop::loopthread, this));
+	//thread_ = std::move(t);
+}
+
+void EventLoop::loopthread()
 {
 	//assert(!looping_);
 	assertInLoopThread();
@@ -176,6 +182,7 @@ void EventLoop::abortNotInLoopThread()
 
 void EventLoop::wakeup()
 {
+	PRINTFUNC;
 	uint64_t one = 1;
 	ssize_t n = sockets::write(wakeupFd_, &one, sizeof one);
 	if (n != sizeof one) {

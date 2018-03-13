@@ -12,6 +12,8 @@ add_library(network
 	#src/TcpClientSocket.cpp
 	#src/TcpClient.cpp
 	src/TcpServer.cpp
+	src/MyServer.cpp
+	src/Buffer.cpp
 	src/Acceptor.cpp
 	src/TcpConnection.cpp
 	src/SocketOps.cpp

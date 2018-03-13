@@ -18,7 +18,7 @@
 //#include "DataParser.h"
 #include "Ipc.h"
 #include <sys/epoll.h>
-
+#include <string>
 #include "EventLoop.h"
 #include "InetAddress.h"
 #include "Acceptor.h"
@@ -88,7 +88,7 @@ public:
 
 	TcpServer(EventLoop* loop,
 				const InetAddress& listenAddr,
-				const string& nameArg,int maxCon);
+				const string& nameArg/*,int maxCon*/);
 	~TcpServer();
 	
 	void start();
@@ -124,7 +124,7 @@ private:
 	Acceptor* acceptor_;
 	const string hostport_;
 	const string name_; //server name
-	int maxConnections_;
+	//int maxConnections_;
 	
 	// always in loop thread
 	int nextConnId_;

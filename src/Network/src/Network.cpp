@@ -12,7 +12,8 @@
 #include <unistd.h> //fork()
 #include <sys/wait.h>
 
-#include "TcpServer.h"
+//#include "TcpServer.h"
+#include "MyServer.h"
 #include "InetAddress.h"
 #include "EventLoop.h"
 
@@ -191,6 +192,8 @@ void Network::NetworkListenerThread()
 	LOGGING("***********End NetworkListenerThread***************\r\n");	
 }
 
+EventLoop loop;
+
 int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventManager *event_manager,READER_CONFIGURATION *pRConfg)
 {
 	LOGGING("InitNetworkServer\r\n");
@@ -210,10 +213,12 @@ int InitNetworkServer(int tcpPort,int udpPort,ScanDriver *scan_driver, EventMana
 	//ptest->DeleteManagerSet("test2");
 	ptest->DumpAll();*/
 
-	EventLoop loop;
 	InetAddress listenAddr(55266);
-	TcpServer *myServer = new TcpServer(&loop,listenAddr,"TestServer",4);
-	myServer->start();
+
+	//TcpServer *myServer = new TcpServer(&loop,listenAddr,"TestServer",4);
+	MyServer *pMyServer = new MyServer(&loop,listenAddr,2);
+	pMyServer->start();
+
 	loop.loop();
 	
 #ifdef USE_IPC_CLASS

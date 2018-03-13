@@ -38,8 +38,10 @@ public:
 	///
 	/// Must be called in the same thread as creation of the object.
 	///
+	void loopthread();
 	void loop();
 	void quitLoop();
+	
 	void runInLoop(const Functor& cb);
 	void queueInLoop(const Functor& cb);
 
@@ -61,13 +63,14 @@ private:
 	bool quit_;
 	bool eventHandling_; /* atomic */
 	bool callingPendingFunctors_; /* atomic */
+	int wakeupFd_;
+	std::thread thread_;
 	//const pid_t threadId_;
 	std::thread::id threadId_;
 	
 	ChannelList activeChannels_;
 	Channel* currentActiveChannel_;
 	Channel* wakeupChannel_;
-	int wakeupFd_;
 	Poller *poller_;
 	std::vector<Functor> pendingFunctors_; // @GuardedBy mutex_
 	std::mutex mutex_;
